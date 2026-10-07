@@ -17,7 +17,7 @@
     {
       "binding": "DB",
       "database_name": "vigil",
-      "database_id": "00000000-0000-0000-0000-000000000001",
+      "database_id": "63cb3890-e7d8-481c-9f35-0287e8394b5f",
       "migrations_dir": "migrations"
     }
   ],

@@ -1,5 +1,9 @@
 # Vigil
 
+**Live:** https://vigil.dumpydon.workers.dev/ · **Private source:** https://github.com/dumpydon/vigil
+
+Production is published on Cloudflare Free and starts empty by the owner’s choice. Local data is preserved in a complete JSON backup outside Git. See [deployment and sign-in instructions](docs/deployment.md) for the database dashboard, owner credential location, and Dock installation.
+
 A private, one-owner job-application counter. React, TypeScript, Vite, a native Cloudflare Worker router, D1, and IndexedDB. Full dashboard and compact logging window share the same records. There is no registration, scraping, AI, or paid integration.
 
 ## Local development

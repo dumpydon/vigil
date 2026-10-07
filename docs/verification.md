@@ -1,10 +1,12 @@
-# Vigil verification — 2026-10-07
+# Vigil local verification — 2026-10-07
+
+**Production was subsequently published on 2026-10-08.** See [the deployment report](deployment.md) for current status. This report preserves the earlier local checks and the access blocker that existed at that time.
 
 **Story:** An owner signs in, logs applications in the full or compact window, sees UTC progress from retained entry records, and safely syncs those records from IndexedDB to D1, including after interruption or reload.
 
-## Result
+## Historical local result
 
-The local application is implemented and verified through browser → API → D1 → rendered response. **Production has not been deployed.** Cloudflare access is the remaining external dependency: the existing Wrangler OAuth credential lacks `d1:write` and D1 listing returns authentication error 10000. The previously authorized Cloudflare dashboard browser session expired and now displays its Google sign-in page. Approval to continue that page is pending because it explicitly accepts Cloudflare's terms.
+The local application is implemented and verified through browser → API → D1 → rendered response. **Production had not yet been deployed at the time of these local checks.** Cloudflare access is the remaining external dependency: the existing Wrangler OAuth credential lacks `d1:write` and D1 listing returns authentication error 10000. The previously authorized Cloudflare dashboard browser session expired and now displays its Google sign-in page. Approval to continue that page is pending because it explicitly accepts Cloudflare's terms.
 
 No production database, Worker, owner password, or application entries were created during these checks. `wrangler.jsonc` keeps the production database UUID as a guarded placeholder; the local environment is independently configured. Finish the deployment steps in `README.md` after access is restored, then append live verification evidence here. A future live check must confirm real owner login on the free Worker and zero initial application entries; local success does not establish those facts.
 
@@ -66,6 +68,8 @@ Viewport dimensions were checked against the page's actual CSS `innerWidth`/`inn
 
 Normal visual verification emitted no console errors or warnings in the dedicated development tab. The fault test intentionally produced network failures. Temporary viewport overrides were reset before completion.
 
-## Remaining production work
+## Production work identified at that time
 
 Restore authorized Cloudflare access; create the dedicated free D1 database; set its returned UUID in the main binding; apply the three migrations; publish the dedicated Worker; set a distinct owner credential using the hidden setup script; verify the live page, unauthenticated 401 responses, valid owner session, and empty production dataset. Installability metadata and local service-worker behavior are verified, but an actual Mac Dock installation and live free-plan login are pending the HTTPS deployment.
+
+All publishing steps are now complete; production starts empty following the owner’s explicit choice. Current links and smoke evidence are in `deployment.md`.
