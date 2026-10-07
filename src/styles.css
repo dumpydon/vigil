@@ -13,3 +13,8 @@
 .compact-shell .quick-row{padding:6px 10px;margin-top:6px}
 .compact-shell .category-heading{margin-bottom:4px}
 .compact-footer{padding:8px 16px 10px}
+
+/* App scale is independent of Chrome's browser zoom and native title bar. */
+:root{--ui-scale:.6;zoom:var(--ui-scale)}
+.page,.login-page{min-height:calc(100dvh / var(--ui-scale))}
+.modal{width:min(500px,calc(100vw / var(--ui-scale) - 32px));max-height:calc(100dvh / var(--ui-scale) - 32px)}

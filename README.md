@@ -114,7 +114,7 @@ Open the verified HTTPS live URL in Safari or Chrome, sign in, then install:
 - **Safari on Mac:** Share → Add to Dock → Add. [Apple's instructions](https://support.apple.com/guide/safari/add-to-dock-ibrw9e991864/mac).
 - **Chrome:** use the offered Install Vigil control/address-bar install icon. The app's Settings only shows an install button when the browser supplies an install prompt.
 
-Launch Vigil from the Dock for a standalone window. Open `/compact` or use the compact control for the smaller logging layout; the preferred mode is remembered on that device. Below 440px, Custom moves to its own row. Short windows scroll. There are no always-on-top, global-shortcut, or native menu-bar promises.
+Launch Vigil from the Dock for a standalone window. Vigil renders its content at a default 60% visual scale; keep the browser’s own zoom at 100% (Command+0 on Mac) to get that size. Chrome’s native title-bar controls, including Uninstall, are browser-owned and cannot be relocated or restyled by the website. Open `/compact` or use the compact control for the smaller logging layout; the preferred mode is remembered on that device. Below 440px, Custom moves to its own row. Short windows scroll. There are no always-on-top, global-shortcut, or native menu-bar promises.
 
 The service worker caches only the versioned app shell and same-origin static assets. Authenticated APIs and login/logout are excluded. IndexedDB stores personal records deliberately. Updates wait for your action; the Update button is disabled while a draft, modal, or queued changes are present. The app uses local DB schema version 1 with an explicit upgrade callback; future schema versions must migrate existing queues rather than discard them.
 
