@@ -1,0 +1,46 @@
+{
+  "name": "vigil-personal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "dev:api": "wrangler dev --env local --port 8787 --persist-to .wrangler/state",
+    "build": "tsc -b && vite build && node scripts/build-pwa.mjs",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "db:migrate:local": "wrangler d1 migrations apply vigil-local --env local --local --persist-to .wrangler/state",
+    "db:migrate:remote": "node scripts/check-deploy.mjs && wrangler d1 migrations apply vigil --env \"\" --remote",
+    "deploy": "node scripts/check-deploy.mjs && npm run build && wrangler deploy --env \"\"",
+    "setup:owner": "node scripts/setup-owner.mjs",
+    "setup:local": "node scripts/setup-owner.mjs --local"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "idb": "^8.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.3",
+    "typescript": "^5.9.0",
+    "wrangler": "^4.0.0",
+    "@cloudflare/workers-types": "^5.20261007.1",
+    "vitest": "^5.0.3",
+    "miniflare": "5.20261006.0-alpha",
+    "esbuild": "^0.28.2",
+    "fake-indexeddb": "latest",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
+    "eslint-plugin-react-refresh": "^0.4.0"
+  },
+  "overrides": {
+    "sharp": "^0.35.5"
+  }
+}

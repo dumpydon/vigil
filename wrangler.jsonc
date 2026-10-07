@@ -1,0 +1,40 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vigil",
+  "account_id": "71600e008b6faafc09ce26b762e8411b",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-07",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vigil",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": {
+    "enabled": false
+  },
+  "env": {
+    "local": {
+      "name": "vigil-personal-local",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "vigil-local",
+          "database_id": "00000000-0000-0000-0000-000000000001",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  }
+}
