@@ -12,7 +12,7 @@ for name, size in [('icon-192',192),('icon-512',512),('maskable-512',512),('appl
     center = size*supersample/2
     for radius in (26,16):
         outer = (radius+2)*factor
-        draw.ellipse((center-outer,center-outer,center+outer,center+outer),outline='#818cf8',width=round(4*factor))
+        draw.ellipse((center-outer,center-outer,center+outer,center+outer),outline='#4FC5B3' if radius == 16 else '#818cf8',width=round(4*factor))
     radius = 6*factor
     draw.ellipse((center-radius,center-radius,center+radius,center+radius),fill='#818cf8')
     image.resize((size,size),Image.Resampling.LANCZOS).save(target/(name+'.png'))
