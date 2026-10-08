@@ -8,7 +8,19 @@
 - Database UUID: `63cb3890-e7d8-481c-9f35-0287e8394b5f`.
 - Inspect records: [Cloudflare D1 Studio](https://dash.cloudflare.com/71600e008b6faafc09ce26b762e8411b/workers/d1/databases/63cb3890-e7d8-481c-9f35-0287e8394b5f/studio).
 
-The frontend and Worker API are deployed together. The main DB binding targets this remote database; `env.local` continues to use the separate local database. No paid plan, domain purchase, automatic deployment workflow, or unrelated project change was made.
+The frontend and Worker API are deployed together. The main DB binding targets this remote database; `env.local` continues to use the separate local database. No paid plan, domain purchase, or unrelated project change was made.
+
+## Automatic deployment
+
+Cloudflare Workers Builds connects the private `dumpydon/vigil` repository to the existing `vigil` Worker. Pushes to `main` build and deploy the frontend and API together.
+
+- Build command: `npm run build`
+- Deploy command: `node scripts/check-deploy.mjs && npx wrangler deploy --env ""`
+- Project root: repository root
+
+Ordinary deployments retain the existing Worker secrets and remote D1 binding. They do not run owner setup or apply database migrations. Apply future schema migrations separately before deploying code that requires them. `npm run deploy` remains available for a manual release. Build status and logs appear in the Worker's Cloudflare deployment history.
+
+The sections below record the initial release; their initial empty-database totals do not describe subsequent owner activity.
 
 ## Data preservation
 

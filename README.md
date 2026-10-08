@@ -29,7 +29,7 @@ The full dashboard and compact view use the same data. Switching views preserves
 | Offline app | Manifest and service worker | Installation and cached app shell |
 | Tests | Vitest and Miniflare | UTC calculations, real D1 behavior, and sync recovery |
 
-One Worker serves the frontend and API together. One D1 database stores the saved records. The deployment uses Cloudflare Free and a `workers.dev` address. GitHub stores the source; deployment is manual.
+One Worker serves the frontend and API together. One D1 database stores the saved records. The deployment uses Cloudflare Free and a `workers.dev` address. Cloudflare Workers Builds automatically builds and deploys pushes to GitHub `main`.
 
 ## How data stays reliable
 
