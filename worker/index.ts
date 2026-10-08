@@ -1,4 +1,4 @@
-import { assertUuid, canonical, importPreview, makeBackup, shiftDay, utcDay, validateBackup, validateMutation, ValidationError, type Entry, type Goal, type Mutation, type Snapshot } from '../shared/model'
+import { assertUuid, canonical, importPreview, makeBackup, planDayAdjustment, shiftDay, utcDay, validateBackup, validateMutation, ValidationError, type Entry, type Goal, type Mutation, type Snapshot } from '../shared/model'
 import { cookieName, cookieToken, hmac, requireOwner, safeOrigin, sessionCookie, SESSION_SECONDS, sha, verifyPassword, type Env } from './security'
 
 type Row={id:string;date:string;easy:number;external:number;logged_at:string;created_at:string;updated_at:string;version:number;deleted:number;backdated:number}
@@ -54,7 +54,7 @@ function replay(stored:{request_hash:string;response_json:string},hash:string){r
 async function mutate(op:Mutation,env:Env,now:Date){
   const hash=await sha(canonical(op)),prior=await receipt(env,op.id);if(prior)return replay(prior,hash)
   const stamp=now.toISOString(),target=op.type==='create'?op.entry.id:('entryId'in op?op.entryId:null)
-  const statements=[env.DB.prepare('INSERT INTO mutation_receipts(id,request_hash,kind,entry_id,expected_version,expected_revision,created_at) VALUES(?,?,?,?,?,?,?)').bind(op.id,hash,op.type,target,'expectedVersion'in op?op.expectedVersion:null,'expectedRevision'in op?op.expectedRevision:null,stamp)]
+  const statements=op.type==='day'?[env.DB.prepare('INSERT INTO mutation_receipts(id,request_hash,kind,assigned_date,expected_entries_json,created_at) VALUES(?,?,?,?,?,?)').bind(op.id,hash,op.type,op.date,JSON.stringify(op.expected),stamp)]:[env.DB.prepare('INSERT INTO mutation_receipts(id,request_hash,kind,entry_id,expected_version,expected_revision,created_at) VALUES(?,?,?,?,?,?,?)').bind(op.id,hash,op.type,target,'expectedVersion'in op?op.expectedVersion:null,'expectedRevision'in op?op.expectedRevision:null,stamp)]
   if(op.type==='create'){
     const e=op.entry
     statements.push(env.DB.prepare('INSERT INTO entries(id,date,easy,external,logged_at,created_at,updated_at,version,backdated) VALUES(?,?,?,?,?,?,?,1,?)').bind(e.id,e.date,e.easy,e.external,e.loggedAt,stamp,stamp,e.backdated?1:0))
@@ -64,6 +64,11 @@ async function mutate(op:Mutation,env:Env,now:Date){
     statements.push(env.DB.prepare('UPDATE owner_settings SET tracking_start=MIN(tracking_start,?) WHERE id=1').bind(op.date))
   }else if(op.type==='delete'){
     statements.push(env.DB.prepare('UPDATE entries SET deleted=1,version=version+1,updated_at=? WHERE id=?').bind(stamp,op.entryId))
+  }else if(op.type==='day'){
+    const plan=planDayAdjustment(op),changes=JSON.stringify(plan.changes)
+    if(plan.changes.length)statements.push(env.DB.prepare("UPDATE entries SET easy=(SELECT json_extract(value,'$.easy') FROM json_each(?) WHERE json_extract(value,'$.id')=entries.id), external=(SELECT json_extract(value,'$.external') FROM json_each(?) WHERE json_extract(value,'$.id')=entries.id), deleted=(SELECT json_extract(value,'$.deleted') FROM json_each(?) WHERE json_extract(value,'$.id')=entries.id), version=version+1,updated_at=? WHERE id IN (SELECT json_extract(value,'$.id') FROM json_each(?))").bind(changes,changes,changes,stamp,changes))
+    if(plan.addition){const e=plan.addition;statements.push(env.DB.prepare('INSERT INTO entries(id,date,easy,external,logged_at,created_at,updated_at,version,backdated) VALUES(?,?,?,?,?,?,?,1,?)').bind(e.id,e.date,e.easy,e.external,e.loggedAt,stamp,stamp,e.backdated?1:0))}
+    statements.push(env.DB.prepare('UPDATE owner_settings SET tracking_start=MIN(tracking_start,?) WHERE id=1').bind(op.date))
   }else if(op.type==='goal'){
     statements.push(env.DB.prepare('INSERT INTO goal_overrides(date,value) VALUES(?,?) ON CONFLICT(date) DO UPDATE SET value=excluded.value').bind(op.date,op.value))
     if(op.future)statements.push(env.DB.prepare('INSERT INTO goal_policies(date,value) VALUES(?,?) ON CONFLICT(date) DO UPDATE SET value=excluded.value').bind(shiftDay(op.date,1),op.value))
@@ -83,6 +88,7 @@ async function mutate(op:Mutation,env:Env,now:Date){
   }
   statements.push(env.DB.prepare('UPDATE owner_settings SET revision=revision+1 WHERE id=1'))
   statements.push(env.DB.prepare(`UPDATE mutation_receipts SET response_json=json_object('revision',(SELECT revision FROM owner_settings WHERE id=1),'goalRevision',(SELECT goal_revision FROM owner_settings WHERE id=1),'entry',json((SELECT ${entryJson} FROM entries WHERE id=?)),'imported',imported_count) WHERE id=?`).bind(target,op.id))
+  if(op.type==='day')statements.push(env.DB.prepare(`UPDATE mutation_receipts SET response_json=json_set(response_json,'$.entries',json((SELECT json_group_array(json(e.value)) FROM (SELECT ${entryJson} AS value FROM entries WHERE id IN (SELECT json_extract(value,'$.id') FROM json_each(?)) OR id=?) AS e))) WHERE id=?`).bind(JSON.stringify(op.expected),op.additionId,op.id))
   statements.push(env.DB.prepare('SELECT response_json FROM mutation_receipts WHERE id=?').bind(op.id))
   try{
     const results=await env.DB.batch(statements)
@@ -91,7 +97,7 @@ async function mutate(op:Mutation,env:Env,now:Date){
   }catch(error){
     // A duplicate receipt aborts the entire transaction. Re-read only after rollback.
     const stored=await receipt(env,op.id);if(stored)return replay(stored,hash)
-    if(/entry_version_conflict|entry_id_conflict|goal_version_conflict/.test(String(error))){
+    if(/entry_version_conflict|entry_id_conflict|goal_version_conflict|day_version_conflict/.test(String(error))){
       const row=target?await env.DB.prepare('SELECT * FROM entries WHERE id=?').bind(target).first<Row>():null
       return response({error:'This record changed in another tab. Review the cloud value before continuing.',code:'CONFLICT',entry:row?mapped(row):null,snapshot:await readSnapshot(env,now)},409)
     }
@@ -168,6 +174,7 @@ export function createHandler(clock:()=>Date=()=>new Date()){
         const op=validateMutation(await body(request),today)
         const valid=(op.type==='create'&&url.pathname==='/api/entries'&&request.method==='POST')||
           ((op.type==='update'||op.type==='delete')&&url.pathname===`/api/entries/${op.entryId}`&&request.method===(op.type==='update'?'PATCH':'DELETE'))||
+          (op.type==='day'&&url.pathname===`/api/days/${op.date}`&&request.method==='PUT')||
           (op.type==='goal'&&url.pathname===`/api/goals/${op.date}`&&request.method==='PUT')||
           (op.type==='import'&&url.pathname==='/api/import'&&request.method==='POST')
         if(!valid)return response({error:'Unknown mutation endpoint.'},404)

@@ -8,7 +8,7 @@ import { utcDay, type Mutation, type Snapshot } from '../shared/model'
 export async function makeEnvironment(){
   const mf=new Miniflare(convertV4MiniflareOptions({modules:true,script:'export default {fetch(){return new Response("test")}}',d1Databases:{DB:crypto.randomUUID()},compatibilityDate:'2026-10-07'}))
   const db=await mf.getD1Database('DB') as unknown as D1Database
-  for(const name of ['0001_initial.sql','0002_session_generation.sql','0003_auth_receipts.sql']){
+  for(const name of ['0001_initial.sql','0002_session_generation.sql','0003_auth_receipts.sql','0004_day_adjustments.sql']){
     let sql=(await readFile(new URL('../migrations/'+name,import.meta.url),'utf8')).replace(/--[^\n]*/g,'')
     const triggers=[...sql.matchAll(/CREATE TRIGGER[\s\S]*?\nEND;/g)].map(m=>m[0])
     for(const t of triggers)sql=sql.replace(t,'')
@@ -29,6 +29,6 @@ export async function makeEnvironment(){
   async function login(){return fetcher('/api/login',{method:'POST',body:JSON.stringify({id:crypto.randomUUID(),password})})}
   async function snapshot(){return await (await fetcher('/api/snapshot')).json() as Snapshot}
   function op(easy=1,external=0):Extract<Mutation,{type:'create'}>{return {id:crypto.randomUUID(),type:'create',entry:{id:crypto.randomUUID(),easy,external,date:utcDay(time),loggedAt:time.toISOString(),backdated:false}}}
-  function mutate(operation:Mutation){const url=operation.type==='create'?'/api/entries':operation.type==='goal'?'/api/goals/'+operation.date:operation.type==='import'?'/api/import':'/api/entries/'+operation.entryId,method=operation.type==='create'||operation.type==='import'?'POST':operation.type==='goal'?'PUT':operation.type==='update'?'PATCH':'DELETE';return fetcher(url,{method,body:JSON.stringify(operation)})}
+  function mutate(operation:Mutation){const url=operation.type==='create'?'/api/entries':operation.type==='day'?'/api/days/'+operation.date:operation.type==='goal'?'/api/goals/'+operation.date:operation.type==='import'?'/api/import':'/api/entries/'+operation.entryId,method=operation.type==='create'||operation.type==='import'?'POST':operation.type==='goal'||operation.type==='day'?'PUT':operation.type==='update'?'PATCH':'DELETE';return fetcher(url,{method,body:JSON.stringify(operation)})}
   return {mf,env,password,handler,fetcher,login,snapshot,op,mutate,clock:()=>new Date(time),setTime:(value:string)=>{time=new Date(value)},clearCookie:()=>{cookie=''},dispose:()=>mf.dispose()}
 }

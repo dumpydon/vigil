@@ -7,6 +7,7 @@ export interface Entry {
   createdAt: string; updatedAt: string; version: number; deleted: boolean; backdated: boolean
 }
 export interface Goal { date: Day; value: number }
+export type DayEntry = Pick<Entry,'id'|'version'|'easy'|'external'|'loggedAt'>
 export interface Snapshot {
   entries: Entry[]; policies: Goal[]; overrides: Goal[]
   trackingStart: Day; revision: number; goalRevision: number; serverNow: string
@@ -16,6 +17,7 @@ export type Mutation =
   | { id: string; type: 'create'; entry: Pick<Entry, 'id'|'date'|'easy'|'external'|'loggedAt'|'backdated'> }
   | { id: string; type: 'update'; entryId: string; expectedVersion: number; date: Day; easy: number; external: number }
   | { id: string; type: 'delete'; entryId: string; expectedVersion: number }
+  | { id: string; type: 'day'; date: Day; easy: number; external: number; expected: DayEntry[]; additionId: string; loggedAt: string }
   | { id: string; type: 'goal'; date: Day; value: number; future: boolean; expectedRevision: number; loggedAt: string }
   | { id: string; type: 'import'; items: BackupItem[]; trackingStart: Day }
 export type BackupItem = { kind: 'entry'; entry: Entry } | { kind: 'policy'|'override'; date: Day; value: number }
@@ -24,7 +26,7 @@ export interface Backup {
   entries: Entry[]; policies: Goal[]; overrides: Goal[]
 }
 export interface MutationResult {
-  revision: number; goalRevision: number; entry?: Entry; snapshot?: Snapshot; imported?: number
+  revision: number; goalRevision: number; entry?: Entry; entries?: Entry[]; snapshot?: Snapshot; imported?: number
 }
 export interface Daily { date: Day; easy: number; external: number; total: number; goal: number; tracking: boolean }
 export class ValidationError extends Error {}
@@ -98,6 +100,13 @@ export function validateMutation(input: unknown, today: Day): Mutation {
     case 'delete':
       assertUuid(op.entryId); positiveVersion(op.expectedVersion)
       return {id:op.id,type:op.type,entryId:op.entryId,expectedVersion:op.expectedVersion}
+    case 'day': {
+      assertDay(op.date,today); assertCount(op.easy); assertCount(op.external); assertUuid(op.additionId); assertIso(op.loggedAt)
+      if(utcDay(new Date(op.loggedAt))>today||!Array.isArray(op.expected)||op.expected.length>1000)throw new ValidationError('Invalid day adjustment.')
+      const expected=op.expected.map(e=>{assertUuid(e.id);positiveVersion(e.version);counts(e.easy,e.external);assertIso(e.loggedAt);return {id:e.id,version:e.version,easy:e.easy,external:e.external,loggedAt:e.loggedAt}})
+      if(new Set(expected.map(e=>e.id)).size!==expected.length||expected.some(e=>e.id===op.additionId))throw new ValidationError('Duplicate adjustment entry IDs.')
+      return {id:op.id,type:'day',date:op.date,easy:op.easy,external:op.external,expected,additionId:op.additionId,loggedAt:op.loggedAt}
+    }
     case 'goal':
       assertDay(op.date,today); assertCount(op.value,1); assertIso(op.loggedAt)
       if (typeof op.future!=='boolean'||!Number.isSafeInteger(op.expectedRevision)||op.expectedRevision<0) throw new ValidationError('Invalid goal version.')
@@ -139,6 +148,21 @@ export function totalsByDay(entries: Entry[]): Map<Day,{easy:number;external:num
   const m=new Map<Day,{easy:number;external:number}>()
   for(const e of entries) if(!e.deleted){const t=m.get(e.date)??{easy:0,external:0};t.easy+=e.easy;t.external+=e.external;m.set(e.date,t)}
   return m
+}
+// Reduce newest entries first, preserving identities and original logging times.
+// Any increase is one new backdated entry, rather than rewriting submission history.
+export function planDayAdjustment(op:Extract<Mutation,{type:'day'}>) {
+  const before=op.expected.reduce((sum,e)=>({easy:sum.easy+e.easy,external:sum.external+e.external}),{easy:0,external:0})
+  let removeEasy=Math.max(0,before.easy-op.easy),removeExternal=Math.max(0,before.external-op.external)
+  const changes:({id:string;easy:number;external:number;deleted:boolean;version:number})[]=[]
+  for(const e of [...op.expected].sort((a,b)=>b.loggedAt.localeCompare(a.loggedAt)||b.id.localeCompare(a.id))){
+    const easy=e.easy-Math.min(e.easy,removeEasy),external=e.external-Math.min(e.external,removeExternal)
+    removeEasy-=e.easy-easy;removeExternal-=e.external-external
+    if(easy!==e.easy||external!==e.external)changes.push({id:e.id,easy:easy+external?easy:e.easy,external:easy+external?external:e.external,deleted:easy+external===0,version:e.version+1})
+  }
+  const easy=Math.max(0,op.easy-before.easy),external=Math.max(0,op.external-before.external)
+  const addition=easy+external?{id:op.additionId,date:op.date,easy,external,loggedAt:op.loggedAt,createdAt:op.loggedAt,updatedAt:op.loggedAt,version:1,deleted:false,backdated:op.date!==utcDay(new Date(op.loggedAt))}:null
+  return {before,changes,addition}
 }
 export function seriesFor(snapshot:Snapshot,days:number,today:Day):Daily[] {
   const totals=totalsByDay(snapshot.entries)

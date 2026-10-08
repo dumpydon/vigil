@@ -1,5 +1,5 @@
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb'
-import { DEFAULT_GOAL, FIRST_DAY, goalFor, shiftDay, utcDay, validateMutation, type Entry, type Mutation, type MutationResult, type Snapshot } from '../../shared/model'
+import { DEFAULT_GOAL, FIRST_DAY, goalFor, planDayAdjustment, shiftDay, utcDay, validateMutation, type DayEntry, type Entry, type Mutation, type MutationResult, type Snapshot } from '../../shared/model'
 
 export type QueueRecord={operation:Mutation;sequence:number;status:'pending'|'inflight'|'conflict'|'invalid';error?:string;cloudEntry?:Entry|null;cloudGoal?:number}
 type Lease={owner:string;until:number}
@@ -28,6 +28,11 @@ export function project(base:Snapshot,queue:QueueRecord[]):Snapshot {
       trackingStart=trackingStart<op.date?trackingStart:op.date
     }else if(op.type==='delete'){
       const current=entries.get(op.entryId);if(current)entries.set(op.entryId,{...current,deleted:true,version:op.expectedVersion+1})
+    }else if(op.type==='day'){
+      const plan=planDayAdjustment(op)
+      for(const change of plan.changes){const e=entries.get(change.id);if(e)entries.set(e.id,{...e,...change,updatedAt:op.loggedAt})}
+      if(plan.addition&&!entries.has(plan.addition.id))entries.set(plan.addition.id,plan.addition)
+      trackingStart=trackingStart<op.date?trackingStart:op.date
     }else if(op.type==='goal'){
       overrides=replaceGoal(overrides,op.date,op.value)
       if(op.future)policies=replaceGoal(policies,shiftDay(op.date,1),op.value)
@@ -44,7 +49,7 @@ export function project(base:Snapshot,queue:QueueRecord[]):Snapshot {
   return {...base,entries:[...entries.values()],policies,overrides,goalRevision,trackingStart}
 }
 export function endpoint(op:Mutation):{url:string;method:string}{
-  switch(op.type){case 'create':return {url:'/api/entries',method:'POST'};case 'update':return {url:`/api/entries/${op.entryId}`,method:'PATCH'};case 'delete':return {url:`/api/entries/${op.entryId}`,method:'DELETE'};case 'goal':return {url:`/api/goals/${op.date}`,method:'PUT'};case 'import':return {url:'/api/import',method:'POST'}}
+  switch(op.type){case 'create':return {url:'/api/entries',method:'POST'};case 'update':return {url:`/api/entries/${op.entryId}`,method:'PATCH'};case 'delete':return {url:`/api/entries/${op.entryId}`,method:'DELETE'};case 'day':return {url:`/api/days/${op.date}`,method:'PUT'};case 'goal':return {url:`/api/goals/${op.date}`,method:'PUT'};case 'import':return {url:'/api/import',method:'POST'}}
 }
 
 export class SyncEngine {
@@ -145,7 +150,7 @@ export class SyncEngine {
       await tx.done
       await this.reloadLocal();this.emit({status:this.options.online()?'saving':'offline',error:null});this.broadcast();void this.sync()
       return op
-    }catch(error){try{tx.abort()}catch{/* Already finished. */}throw new Error(error instanceof Error?error.message:'The entry could not be retained. Nothing was added.')}
+    }catch(error){try{tx.abort()}catch{/* Already finished. */}await tx.done.catch(()=>{});throw new Error(error instanceof Error?error.message:'The entry could not be retained. Nothing was added.')}
   }
   async createEntry(easy:number,external:number,date?:string){
     const now=this.options.clock(),assigned=date??utcDay(now)
@@ -162,6 +167,16 @@ export class SyncEngine {
     return this.enqueue(s=>{
       const entry=s.entries.find(e=>e.id===id&&!e.deleted);if(!entry)return null
       return {id:crypto.randomUUID(),type:'delete',entryId:id,expectedVersion:expectedVersion??entry.version}
+    })
+  }
+  async adjustDay(date:string,easy:number,external:number,expected:DayEntry[]){
+    const now=this.options.clock()
+    return this.enqueue(s=>{
+      const current=s.entries.filter(e=>e.date===date&&!e.deleted)
+      if(current.length!==expected.length||expected.some(e=>!current.some(c=>c.id===e.id&&c.version===e.version&&c.easy===e.easy&&c.external===e.external)))throw new Error('This day changed while you were reviewing it. Reopen its counts and confirm again.')
+      const before=current.reduce((sum,e)=>({easy:sum.easy+e.easy,external:sum.external+e.external}),{easy:0,external:0})
+      if(before.easy===easy&&before.external===external)return null
+      return {id:crypto.randomUUID(),type:'day',date,easy,external,expected,additionId:crypto.randomUUID(),loggedAt:now.toISOString()}
     })
   }
   async setGoal(date:string,value:number,future:boolean,expectedRevision?:number){
@@ -199,13 +214,14 @@ export class SyncEngine {
     const tx=this.db.transaction(['meta','queue'],'readwrite'),stored=await tx.objectStore('meta').get('snapshot') as Snapshot|undefined
     if(stored){
       const op=record.operation,s={...stored,entries:[...stored.entries],policies:[...stored.policies],overrides:[...stored.overrides]}
-      if(result.entry){const old=s.entries.find(e=>e.id===result.entry!.id);if(!old||old.version<=result.entry.version)s.entries=[...s.entries.filter(e=>e.id!==result.entry!.id),result.entry]}
+      for(const entry of result.entries??(result.entry?[result.entry]:[])){const old=s.entries.find(e=>e.id===entry.id);if(!old||old.version<=entry.version)s.entries=[...s.entries.filter(e=>e.id!==entry.id),entry]}
       if(result.revision>=s.revision){
         if(op.type==='goal'){s.overrides=replaceGoal(s.overrides,op.date,op.value);if(op.future)s.policies=replaceGoal(s.policies,shiftDay(op.date,1),op.value)}
         if(op.type==='import'){
           for(const item of op.items){if(item.kind==='entry'&&!s.entries.some(e=>e.id===item.entry.id))s.entries.push(item.entry);else if(item.kind==='policy'&&!s.policies.some(g=>g.date===item.date))s.policies.push({date:item.date,value:item.value});else if(item.kind==='override'&&!s.overrides.some(g=>g.date===item.date))s.overrides.push({date:item.date,value:item.value})}
           s.trackingStart=s.trackingStart<op.trackingStart?s.trackingStart:op.trackingStart
         }
+        if(op.type==='day')s.trackingStart=s.trackingStart<op.date?s.trackingStart:op.date
         if(op.type==='create')s.trackingStart=s.trackingStart<op.entry.date?s.trackingStart:op.entry.date
         if(op.type==='update')s.trackingStart=s.trackingStart<op.date?s.trackingStart:op.date
         s.revision=result.revision;s.goalRevision=result.goalRevision
@@ -271,7 +287,7 @@ export class SyncEngine {
     const entryId=op.type==='create'?op.entry.id:'entryId'in op?op.entryId:null
     if(choice==='cloud'){
       // Dependent edits cannot be reinterpreted as if their original predecessor succeeded.
-      for(const q of queue)if(q.operation.id===id||(q.sequence>record.sequence&&entryId&&'entryId'in q.operation&&q.operation.entryId===entryId))await tx.objectStore('queue').delete(q.operation.id)
+      for(const q of queue)if(q.operation.id===id||(op.type==='day'&&q.sequence>record.sequence&&((q.operation.type==='day'&&q.operation.date===op.date)||('entryId'in q.operation&&(q.operation.entryId===op.additionId||op.expected.some(e=>e.id===('entryId'in q.operation?q.operation.entryId:null))))))||(q.sequence>record.sequence&&entryId&&'entryId'in q.operation&&q.operation.entryId===entryId))await tx.objectStore('queue').delete(q.operation.id)
     }else{
       let replacement:Mutation|null=null
       if(op.type==='goal')replacement={...op,id:crypto.randomUUID(),expectedRevision:base.goalRevision}
