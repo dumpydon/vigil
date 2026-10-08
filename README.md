@@ -1,14 +1,49 @@
 # Vigil
 
-**Live:** https://vigil.dumpydon.workers.dev/ · **Private source:** https://github.com/dumpydon/vigil
+Vigil is a personal job-application tracker. It counts LinkedIn Easy Apply and external/form applications, shows progress toward a daily goal, and keeps a history you can correct later.
 
-Production is published on Cloudflare Free and starts empty by the owner’s choice. Local data is preserved in a complete JSON backup outside Git. See [deployment and sign-in instructions](docs/deployment.md) for the database dashboard, owner credential location, and Dock installation.
+It is built for one owner who wants to log applications quickly and stay consistent. You enter the counts yourself. Vigil works as a website or an installed app with its own window.
 
-A private, one-owner job-application counter. React, TypeScript, Vite, a native Cloudflare Worker router, D1, and IndexedDB. Full dashboard and compact logging window share the same records. There is no registration, scraping, AI, or paid integration.
+**[Open Vigil](https://vigil.dumpydon.workers.dev/)** · **[Compact view](https://vigil.dumpydon.workers.dev/compact)**
 
-## Local development
+## What it does
 
-Use Node 22.14+ and npm. From this directory:
+- Log +1, +2, +3, or +5 applications in either category with one click.
+- Add a custom count or save both categories as one mixed batch.
+- Edit entries, undo additions, and confirm deletions.
+- Choose a past UTC date and adjust its totals. Every past-day increase or decrease requires a before/after confirmation.
+- Set daily goals and view 7-, 15-, or 30-day charts, averages, and goal streaks.
+- Keep logging offline after the first successful sign-in and load.
+- Export entries as CSV or keep a complete JSON backup of entries and goals.
+
+The full dashboard and compact view use the same data. Switching views preserves pending work. The app remembers the preferred view on each device.
+
+## Tech stack
+
+| Part | Technology | Purpose |
+| --- | --- | --- |
+| Interface | React, TypeScript, Vite | Dashboard, forms, and SVG charts |
+| API | Cloudflare Worker | Authentication and validated data changes |
+| Database | Cloudflare D1 | Entries, goals, sessions, and operation receipts |
+| Device storage | IndexedDB | Cached records, drafts, and pending changes |
+| Offline app | Manifest and service worker | Installation and cached app shell |
+| Tests | Vitest and Miniflare | UTC calculations, real D1 behavior, and sync recovery |
+
+One Worker serves the frontend and API together. One D1 database stores the saved records. The deployment uses Cloudflare Free and a `workers.dev` address. GitHub stores the source; deployment is manual.
+
+## How data stays reliable
+
+Vigil stores individual entries rather than a daily counter. Totals are calculated from active entries. Editing preserves an entry's ID and original logging time; deleted entries stay in history but are excluded from totals.
+
+A change is written to IndexedDB before appearing as retained. The app then sends it to the Worker. **Saved** means the server has acknowledged it. Each operation has a unique ID, and D1 commits its receipt and data change together. Retrying the same operation has one effect, even if the first response was lost.
+
+Past-day adjustments are atomic. If another tab changes that day during review, the save is rejected and the owner must review the latest totals again. The queue also survives reloads and expired sessions. Sync resumes while the app is open; closing the app stops background work.
+
+All dates use UTC. A new day starts at **00:00 UTC**, or **05:30 IST**. The default goal is 75. Goal changes can apply to one day or become the default from tomorrow; earlier goals remain stable. Closed-day averages include zero days after tracking begins and exclude today.
+
+## Run locally
+
+Use Node 22.14+ and npm.
 
 ```sh
 npm ci
@@ -17,123 +52,45 @@ npm run db:migrate:local
 npm run build
 ```
 
-`setup:local` asks twice for a hidden owner password (12–256 characters). It writes `.dev.vars` with mode 600, containing a salted password hash and a random session secret. It does not print your password. Restart the Worker after changing these values.
+Owner setup uses a hidden password prompt and writes ignored local secrets to `.dev.vars`. Restart the API server after changing them.
 
-Run these in two terminals and leave them running:
+Run these in separate terminals:
 
 ```sh
 npm run dev:api
 npm run dev
 ```
 
-Open **http://127.0.0.1:5173/**. Vite forwards API calls to the local Worker on port 8787. Local D1 is stored under `.wrangler/state`. The `local` Wrangler environment has its own database binding, independent of production. The development service worker is disabled so hot reload stays reliable. After building, **http://127.0.0.1:8787/** serves the production shell and service worker against the same local D1.
+Open **http://127.0.0.1:5173/**. Vite forwards API requests to the local Worker on port 8787. The local D1 database is kept in `.wrangler/state`; it is separate from production. The service worker is disabled during development.
 
-The current development workspace has a separately generated test credential in `.dev.credentials.local` and local verification records. These files are ignored and must never be deployed, committed, or used as production credentials. `node scripts/setup-owner.mjs --local --test` is restricted to local verification and retains an existing local configuration. Choose your own local password with `setup:local` when you want to replace the test credential.
-
-## Checks
+## Validate and deploy
 
 ```sh
 npm run typecheck
 npm run lint
 npm test
 npm run build
-npm audit
 ```
 
-Tests run against isolated Miniflare D1 databases and fake IndexedDB, with an injectable UTC clock. They do not query or mutate production. The fixture dates and counts live only in tests/local verification; migrations contain no application-entry fixtures. See `docs/verification.md` for browser evidence and deployment status.
+Tests use isolated local databases and a controlled clock. They cover UTC boundaries, goal history, atomic changes, retries, offline recovery, conflicts, and import deduplication.
 
-## Cloudflare deployment
+The production Worker and database are both named `vigil`. Their binding is in `wrangler.jsonc`; the `local` environment uses `vigil-local`. With the required Cloudflare permissions:
 
-Use only the existing account in `wrangler.jsonc`, a dedicated **vigil** Worker, and a dedicated **vigil** D1 database. Do not modify unrelated Workers. Keep the account on the Free plan.
+```sh
+npm run db:migrate:remote
+npm run deploy
+```
 
-1. Inspect the account's Workers plan and D1 quota in the dashboard before provisioning. The account was inspected on 2026-10-07: Workers Free, seven existing unrelated applications, no D1 databases, and the D1 free storage/read/write allowances unused.
-2. Authenticate Wrangler with account-read, Worker-write, and D1-write permissions. The existing Wrangler credential initially lacked `d1:write`; granting a new scope requires the account owner's approval. `npx wrangler login --scopes-list` lists supported scope names. Do not grant unrelated product permissions merely because Wrangler's default scope list includes them.
-3. Create the separate production database:
+For first-time owner setup or an intentional password change, run `npm run setup:owner`. It uploads secrets securely and invalidates old sessions. Ordinary deployments preserve the existing credential. Direct D1 migration commands require Wrangler's `d1:write` permission.
 
-   ```sh
-   npx wrangler d1 create vigil
-   ```
+## Privacy, backups, and installation
 
-4. Copy its returned UUID into the **main** `d1_databases` DB binding in `wrangler.jsonc`. Leave `env.local` unchanged. The placeholder UUID deliberately blocks the deployment and remote migration scripts until this step is complete.
-5. Apply all versioned migrations to production:
+There is one owner login and no registration. Passwords are hashed server-side. Production sessions use secure HttpOnly cookies and last up to 90 days. Private API responses are not cached by the service worker. Personal records may remain cached on the trusted device after sign-out.
 
-   ```sh
-   npm run db:migrate:remote
-   ```
+Settings offers JSON backup and restore. Missing records are added, identical records are skipped, and conflicts keep their current values. Imports preserve IDs and can safely resume after interruption. CSV is for reviewing entries; JSON also preserves goal history. Keep regular backups, since clearing browser storage can erase unsynced work.
 
-6. Publish the application and configure the owner credential from an interactive terminal:
+To install on Mac, open the live website in Safari and choose **Share → Add to Dock**, or use Chrome's install control. A localhost installation stays tied to localhost; production has separate browser storage. The app renders at 60% visual scale with browser zoom at 100%.
 
-   ```sh
-   npm run deploy
-   npm run setup:owner
-   ```
+See [deployment notes](docs/deployment.md) and [verification notes](docs/verification.md) for operational details. Core logic lives in `shared/model.ts`, sync in `src/data/store.ts`, the API in `worker/`, and schema changes in `migrations/`.
 
-   Until secrets are configured, sign-in returns `SETUP_REQUIRED`; there is no default password or authentication bypass. The setup script uploads `OWNER_PASSWORD_HASH` and `SESSION_SECRET` through Wrangler's stdin. It never uploads the plaintext owner password. Store your password in your own password manager. Running it again intentionally rotates the credential and session secret; don't rerun it during an ordinary deploy.
-7. Use the `workers.dev` URL returned by the successful deploy. Confirm the shell loads, private endpoints return 401 without a session, owner login works on the actual free Worker, and the first authenticated snapshot has **zero entries and a goal of 75**. Do not upload local fixtures or local D1 files.
-
-Do not interpret a CLI exit or local preview as proof of a live deployment. `docs/verification.md` records the actual result. If the database was created/migrated using the dashboard, record the same migration names in D1's `d1_migrations` table before future CLI migrations; otherwise migration commands will attempt to create existing tables again.
-
-Current published limits are 100,000 Worker requests/day and 10ms CPU per invocation; D1 Free provides ten databases, 500MB per database, 5GB account storage, 50 queries per Worker invocation, five million rows read/day, and 100,000 rows written/day. All are account-wide/shared. This app uses one Worker and one D1 database, has no cron, and does not poll continuously. Imports use at most 16 records per API chunk to stay below the 50-query limit. Large backups and exhausted shared quotas can require a retry; pending work remains on the device. Never activate a paid upgrade automatically. Sources: [Worker limits](https://developers.cloudflare.com/workers/platform/limits/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/).
-
-## Owner sign-in and sessions
-
-Passwords use PBKDF2-SHA256 (100,000 iterations, a random 16-byte salt), verified through Workers Web Crypto. Session tokens are opaque HMAC outputs over random operation UUIDs; only token hashes are stored in D1. The production cookie uses `__Host-vigil_session`, Secure, HttpOnly, SameSite=Strict, `/` scope, and a maximum lifetime of 90 days. HTTP localhost uses a separate cookie name for development. Expiration and revocation are enforced server-side, including revocation when the session secret rotates. Login has D1-backed per-IP and global attempt limits.
-
-Private APIs return `Cache-Control: no-store, private`. Mutations require same-origin JSON and reject cross-site requests. Cloudflare credentials and owner secrets never enter the client bundle or backups. Sign-out requires pending changes to finish syncing and revokes the server session. Personal cached records can still remain visible on this trusted device after sign-out or session expiry; select the sign-in status to reauthenticate and sync. This is not an encrypted local vault.
-
-## Logging, UTC, and goals
-
-Both categories offer independent +1/+2/+3/+5 clicks. Each click creates its own entry; rapid clicks are not debounced. Custom counts accept 1–10,000 per category, and mixed batches accept 0–10,000 per category with a positive combined total. Mixed batches are one entry, so Undo reverses the whole batch. Entry editing preserves the UUID and original logging timestamp. In Browse history, use Previous/Next or choose any past UTC date, then Edit day counts to set both category totals (including zero). Every past-day change shows the UTC date and before/after totals for confirmation, including backdated additions, individual edits, deletion, and Undo. Today’s quick buttons always log today. Day-total changes commit atomically with a receipt; a concurrent edit to that day blocks the save and requires a fresh review. Reductions change the newest entry contributions first and retain zeroed entries as tombstones; increases create one backdated entry. Goals remain unchanged. Explicit Delete confirms first; Undo needs no confirmation. Deleted entries remain tombstones and never contribute to totals.
-
-All assigned dates and chart grouping use UTC. A day changes at **00:00 UTC / 05:30 IST**. Quick buttons use the time of the actual click, even while viewing historical details. An open draft keeps its visible assigned date across midnight. Past dates are supported; future application dates are rejected. Hourly bars show when you logged, with backdating called out; they do not invent submission times.
-
-The initial goal is 75. A day-specific override changes only that date. On today's goal form, “Use for future days too” starts a new default policy tomorrow. Older policies and overrides keep historical goals stable, including days with no entries. Historical goal edits cannot silently change future defaults. This requires no midnight job.
-
-Progress keeps the real percentage above 100%, caps only the visual fill, and floors remaining at zero. Streaks use each day's applicable goal, retain yesterday's streak while today is incomplete, and include today immediately once it meets goal. Zero closed days break a streak after tracking begins. Closed-day average excludes today and pre-tracking dates and includes zero days in the selected range. Backdating can move the tracking start earlier; deleting records does not silently move it later.
-
-## Persistence and conflict handling
-
-Each operation is first committed to a versioned IndexedDB transaction, then displayed as retained. “Saved” means a server acknowledgment, not merely a local update. Snapshot and queue data survive reload. Local persistence failure displays an error instead of claiming the operation was saved.
-
-The client serializes dependent operations, uses an IndexedDB lease across tabs, and uses BroadcastChannel as an optimization. Retry uses bounded backoff and runs on focus/reconnect. D1 commits the mutation and its unique receipt atomically; retrying an operation has one effect. A different payload with the same ID is rejected. Snapshot receipt reconciliation handles a lost response after commit without double-counting.
-
-Stale entry versions and goal revisions stop the queue with a review banner. It displays the cloud value and offers “Keep cloud value” or an explicit “Apply my change” where applicable. Pending records remain retained during reauthentication. A pending Undo is serialized after its addition and cannot reverse the same entry twice. Sync needs an open browser/app; no background-sync or closed-app execution is promised.
-
-## Backup and restore
-
-Settings offers CSV entries and a `vigil-backup` JSON format, version 1. JSON contains entry IDs/tombstones, timestamps, assigned UTC dates, counts, tracking start, and effective goal policies/overrides. Exports contain no credentials, tokens, or session records. Downloads include retained pending changes; sync first for a cloud-confirmed backup. CSV is an entry review/export format, not the restore format.
-
-JSON import validates format, dates, integers, UUIDs, and size (12MB, 20,000 entries, 5,000 goal records). A preview shows missing, identical, and conflicting records. Missing IDs/dates are inserted, identical records are skipped, and conflicting existing records keep their current values. A repeated import does not duplicate totals. Tracking start can move earlier. The complete import is retained in one local transaction before any chunks sync; each cloud chunk is atomic and idempotent, so interrupted imports safely resume.
-
-Keep periodic JSON backups somewhere you control. Browser storage can be cleared or evicted by the browser/OS; unsynced data on an erased device cannot be recovered from D1. Cloud-saved entries remain in D1.
-
-## Install and daily use
-
-Open the verified HTTPS live URL in Safari or Chrome, sign in, then install:
-
-- **Safari on Mac:** Share → Add to Dock → Add. [Apple's instructions](https://support.apple.com/guide/safari/add-to-dock-ibrw9e991864/mac).
-- **Chrome:** use the offered Install Vigil control/address-bar install icon. The app's Settings only shows an install button when the browser supplies an install prompt.
-
-Launch Vigil from the Dock for a standalone window. Vigil renders its content at a default 60% visual scale; keep the browser’s own zoom at 100% (Command+0 on Mac) to get that size. Chrome’s native title-bar controls, including Uninstall, are browser-owned and cannot be relocated or restyled by the website. Open `/compact` or use the compact control for the smaller logging layout; the preferred mode is remembered on that device. Below 440px, Custom moves to its own row. Short windows scroll. There are no always-on-top, global-shortcut, or native menu-bar promises.
-
-The service worker caches only the versioned app shell and same-origin static assets. Authenticated APIs and login/logout are excluded. IndexedDB stores personal records deliberately. Updates wait for your action; the Update button is disabled while a draft, modal, or queued changes are present. The app uses local DB schema version 1 with an explicit upgrade callback; future schema versions must migrate existing queues rather than discard them.
-
-## Visual asset provenance
-
-The design study is retained in `output/pdf/vigil-visual-research-and-ui-specification.pdf`, with reference evidence in `output/pdf/evidence`. Sources were the actual [Vigilbar site](https://www.vigilbar.com/), its linked Watchtower/Island product previews, and their publicly rendered styling. Marketing typography was not used as the product UI's source of truth.
-
-`public/mark.svg` is a manually authored reconstruction of the observed concentric ring/eye geometry, using our application colors. `scripts/generate-icons.py` rasterizes that geometry into the regular, maskable, and Apple icons. No original logo binary, provider logos, or SF font files were copied. Similarity is intentional, but no ownership or license of the reference's brand is claimed. This application identifies itself as an independent personal job-application tracker and is not the coding-agent product. The system font stack uses fonts already installed on the device.
-
-## Layout of the code
-
-| Location | Responsibility |
-| --- | --- |
-| `src/Dashboard.tsx`, `src/components`, `src/styles.css` | Full/compact UI, forms, charts, settings, design tokens |
-| `src/data/store.ts` | Durable local snapshot, queue, multi-tab sync, reconciliation |
-| `shared/model.ts` | Shared validation, UTC dates, analytics, backup merge policy |
-| `worker/index.ts`, `worker/security.ts` | Native API router, D1 transactions, owner auth |
-| `migrations` | Reproducible schema, transactional precondition triggers, session generation |
-| `public`, `scripts/build-pwa.mjs` | Manifest, icons, hashed app-shell service worker |
-| `tests` | Isolated model, D1/API, and sync correctness tests |
-
-The full snapshot is intentionally small and suited to personal use; this is not a multi-user analytics service. Verification artifacts and temporary network-fault tooling under `test-results` are local-only and excluded from lint/build/deployment.
+The visual style is inspired by Vigilbar. Vigil uses custom SVG assets and system fonts and identifies itself as an independent job-application tracker.
