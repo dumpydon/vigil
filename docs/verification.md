@@ -73,3 +73,12 @@ Normal visual verification emitted no console errors or warnings in the dedicate
 Restore authorized Cloudflare access; create the dedicated free D1 database; set its returned UUID in the main binding; apply the three migrations; publish the dedicated Worker; set a distinct owner credential using the hidden setup script; verify the live page, unauthenticated 401 responses, valid owner session, and empty production dataset. Installability metadata and local service-worker behavior are verified, but an actual Mac Dock installation and live free-plan login are pending the HTTPS deployment.
 
 All publishing steps are now complete; production starts empty following the owner’s explicit choice. Current links and smoke evidence are in `deployment.md`.
+
+## Floating compact card · October 10, 2026
+
+- Chrome's Document Picture-in-Picture opens the compact card with the native site/return/close header and no tab strip or address bar. The browser reported picture-in-picture display mode as true.
+- An isolated in-memory fixture started at 16. Adding one through the floating card updated both views to 17; adding one in the source dashboard updated both to 18. No personal entries, IndexedDB, or API mutations were used.
+- Custom opened as a dialog inside the floating document. Resizing preserved the compact layout with document width equal to viewport width.
+- Closing cleared the source button's active state. Reopening retained 18; Open dashboard kept the floating card compact while returning to the source dashboard.
+- The fixture used the production CSS link, confirming stylesheet transfer as well as the inline development stylesheet path.
+- Five focused PiP tests and ten sync tests passed, along with the production build and focused ESLint.

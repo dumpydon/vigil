@@ -174,3 +174,6 @@
 .remaining-progress[data-tone="light-green"]{--progress-color:#4ade80}
 .remaining-progress{padding-top:1.5rem}
 .progress-done{position:absolute;bottom:calc(100% + .6875rem);transform:translateX(-50%);font-size:.625rem;line-height:.875rem;font-weight:600;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums lining-nums;pointer-events:none}
+
+/* Chrome owns the always-on-top window; the compact card follows its width. */
+.popout-page .compact-shell{max-width:none}

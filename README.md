@@ -18,6 +18,8 @@ It is built for one owner who wants to log applications quickly and stay consist
 
 The full dashboard and compact view use the same data. Switching views preserves pending work. The app remembers the preferred view on each device.
 
+In desktop Chrome, use **Pop out compact view** in the top row to open the compact card in an always-on-top Picture-in-Picture window. It stays visible when you switch tabs or apps, can be moved and resized, and has Chrome's small title bar instead of a tab strip or address bar. Clicking the button again focuses the existing floating window. Both views share live entries and pending changes; **Open dashboard** returns focus to the source tab. Keep that tab open: closing or reloading it closes the floating window. Browsers without Document Picture-in-Picture show an explanatory message instead of opening a regular tab.
+
 ## Tech stack
 
 | Part | Technology | Purpose |
