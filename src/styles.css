@@ -127,11 +127,11 @@
 .progress-marker{position:absolute;top:0;width:.625rem;height:.375rem;transform:translateX(-50%);background:var(--text);clip-path:polygon(0 0,100% 0,50% 100%);pointer-events:none}
 
 /* Remaining daily goal, matching the reference green. */
-.remaining-progress{display:flex;align-items:center;gap:.75rem;padding-top:.625rem;--remaining-green:#3de045}
+.remaining-progress{display:flex;align-items:center;gap:.75rem;padding-top:.625rem;--progress-color:#3de045}
 .remaining-progress .progress-wrap{flex:1;min-width:0;padding-top:0}
 .remaining-progress .progress-marker{top:auto;bottom:calc(100% + .1875rem)}
-.remaining-progress .progress i{background:var(--remaining-green)}
-.progress-left{font-size:.75rem;line-height:1rem;font-weight:700;white-space:nowrap;color:var(--remaining-green);font-variant-numeric:tabular-nums lining-nums}
+.remaining-progress .progress i{background:var(--progress-color)}
+.progress-left{font-size:.75rem;line-height:1rem;font-weight:700;white-space:nowrap;color:var(--progress-color);font-variant-numeric:tabular-nums lining-nums}
 .header-identity{display:grid;gap:.125rem;min-width:0}
 .header .brand{font-size:1.40625rem;color:#fff}
 .compact-shell .header .brand{font-size:1.3125rem}
@@ -166,3 +166,11 @@
 
 .selected-day-summary>.selected-day-categories{translate:calc(50px / var(--ui-scale)) 0;height:1lh}
 .selected-day-summary .selected-category-count{font-size:.8625rem;line-height:inherit}
+
+/* Vigilbar Watchtower status palette; only the daily progress meter uses it. */
+.remaining-progress[data-tone="deep-red"]{--progress-color:#ef4444}
+.remaining-progress[data-tone="red"]{--progress-color:#f87171}
+.remaining-progress[data-tone="amber"]{--progress-color:#fbbf24}
+.remaining-progress[data-tone="light-green"]{--progress-color:#4ade80}
+.remaining-progress{padding-top:1.5rem}
+.progress-done{position:absolute;bottom:calc(100% + .6875rem);transform:translateX(-50%);font-size:.625rem;line-height:.875rem;font-weight:600;color:var(--text);white-space:nowrap;font-variant-numeric:tabular-nums lining-nums;pointer-events:none}
