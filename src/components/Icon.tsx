@@ -1,14 +1,16 @@
-type Name='today'|'history'|'settings'|'compact'|'expand'|'undo'|'close'|'arrow'|'download'|'upload'|'logout'|'check'|'refresh'
+type Name='today'|'history'|'settings'|'compact'|'expand'|'undo'|'close'|'arrow'|'download'|'upload'|'logout'|'check'|'refresh'|'edit'
 const paths:Record<Exclude<Name,'settings'>,string[]>={
   today:['M3 10 12 3l9 7','M5 9v12h14V9','M9 21v-8h6v8'],history:['M4 20V10','M10 20V4','M16 20v-8','M22 20H2'],
   compact:['M4 4h16v16H4Z','M4 9h16','M9 9v11'],expand:['M14 3h7v7','M21 3l-9 9','M10 21H3v-7','M3 21l9-9'],
   undo:['M8 4 3 9l5 5','M3 9h10a7 7 0 1 1 0 14'],close:['m5 5 14 14','M19 5 5 19'],arrow:['M5 12h14','m13 6 6 6-6 6'],
   download:['M12 3v12','m6 10 6 6 6-6','M4 17v4h16v-4'],upload:['M12 16V4','m6 10 6-6 6 6','M4 17v4h16v-4'],logout:['M9 3H3v18h6','M9 12h12','m16 7 5 5-5 5'],
   check:['m5 12 4 4L19 6'],refresh:['M20 8a8 8 0 1 0 0 8','M20 3v5h-5'],
+  edit:['m16 4 4 4','M4 20l5-1L20 8a2.83 2.83 0 0 0-4-4L5 15l-1 5Z'],
 }
 // Custom rounded eight-tooth gear, drawn for a macOS-style toolbar.
 const settingsPath="M8.461 4.629Q8.862 4.424 9.29 4.285L9.657 4.166Q10.086 4.027 10.178 3.586L10.514 1.98Q10.616 1.491 11.116 1.491L12.884 1.491Q13.384 1.491 13.486 1.98L13.822 3.586Q13.914 4.027 14.343 4.166L14.71 4.285Q15.138 4.424 15.539 4.629L15.883 4.804Q16.284 5.008 16.661 4.762L18.034 3.864Q18.453 3.59 18.806 3.944L20.056 5.194Q20.41 5.547 20.136 5.966L19.238 7.339Q18.992 7.716 19.196 8.117L19.371 8.461Q19.576 8.862 19.715 9.29L19.834 9.657Q19.973 10.086 20.414 10.178L22.02 10.514Q22.509 10.616 22.509 11.116L22.509 12.884Q22.509 13.384 22.02 13.486L20.414 13.822Q19.973 13.914 19.834 14.343L19.715 14.71Q19.576 15.138 19.371 15.539L19.196 15.883Q18.992 16.284 19.238 16.661L20.136 18.034Q20.41 18.453 20.056 18.806L18.806 20.056Q18.453 20.41 18.034 20.136L16.661 19.238Q16.284 18.992 15.883 19.196L15.539 19.371Q15.138 19.576 14.71 19.715L14.343 19.834Q13.914 19.973 13.822 20.414L13.486 22.02Q13.384 22.509 12.884 22.509L11.116 22.509Q10.616 22.509 10.514 22.02L10.178 20.414Q10.086 19.973 9.657 19.834L9.29 19.715Q8.862 19.576 8.461 19.371L8.117 19.196Q7.716 18.992 7.339 19.238L5.966 20.136Q5.547 20.41 5.194 20.056L3.944 18.806Q3.59 18.453 3.864 18.034L4.762 16.661Q5.008 16.284 4.804 15.883L4.629 15.539Q4.424 15.138 4.285 14.71L4.166 14.343Q4.027 13.914 3.586 13.822L1.98 13.486Q1.491 13.384 1.491 12.884L1.491 11.116Q1.491 10.616 1.98 10.514L3.586 10.178Q4.027 10.086 4.166 9.657L4.285 9.29Q4.424 8.862 4.629 8.461L4.804 8.117Q5.008 7.716 4.762 7.339L3.864 5.966Q3.59 5.547 3.944 5.194L5.194 3.944Q5.547 3.59 5.966 3.864L7.339 4.762Q7.716 5.008 8.117 4.804L8.461 4.629Z M15.45 12a3.45 3.45 0 1 1-6.9 0a3.45 3.45 0 1 1 6.9 0Z"
 export default function Icon({name,size=16}:{name:Name;size?:number}){
-  if(name==='settings')return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" data-icon="settings" fill="currentColor"><path d={settingsPath} fillRule="evenodd" clipRule="evenodd"/></svg>
-  return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">{paths[name].map((d,i)=><path d={d} key={i}/>)}</svg>
+  const dimension=`${size/16}rem`
+  if(name==='settings')return <svg width={dimension} height={dimension} viewBox="0 0 24 24" aria-hidden="true" data-icon="settings" fill="currentColor"><path d={settingsPath} fillRule="evenodd" clipRule="evenodd"/></svg>
+  return <svg width={dimension} height={dimension} viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round">{paths[name].map((d,i)=><path d={d} key={i}/>)}</svg>
 }

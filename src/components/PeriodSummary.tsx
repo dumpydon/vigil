@@ -34,12 +34,12 @@ export default function PeriodSummary({snapshot}:{snapshot:Snapshot}) {
             onMouseEnter={()=>setOpen(row.id)} onMouseLeave={e=>{if(document.activeElement!==e.currentTarget)setOpen(null)}} onFocus={()=>setOpen(row.id)} onBlur={()=>setOpen(null)} onClick={()=>setOpen(row.id)} onKeyDown={e=>{if(e.key==='Escape'){setOpen(null);e.stopPropagation()}}}>
             {change.kind==='increase'||change.kind==='decrease'?<span aria-hidden="true" className="period-arrow">{change.kind==='increase'?'▲':'▼'}</span>:null}{change.text}
           </button>:<span className="visually-hidden">No comparison for this unfinished period.</span>}</div>
-          <div role="cell" className="period-total"><strong>{counts?number(counts.total):'—'}</strong><span>applications</span></div>
+          <div role="cell" className="period-total"><strong>{counts?number(counts.total):'—'}</strong></div>
           <div role="cell" className="period-breakdown">{counts?<><span className="easy-text">{number(counts.easy)} Easy</span><span className="period-separator" aria-hidden="true">·</span><span className="external-text">{number(counts.external)} External</span></>:<span>{reasonText(current.unavailableReason!)}</span>}</div>
           {comparison&&open===row.id?<div id={helpId} role="tooltip" className="period-help"><strong>{row.label} · UTC</strong><p>{row.description}</p>{change?.reason?<p>{reasonText(change.reason)}.{change.reason==='data-unavailable'?` Cached history is available through ${summary.cachedThrough??'an unknown UTC date'}; sync to load the missing dates.`:` Tracking began on ${summary.trackingStart} UTC.`}</p>:null}<WindowDetails label="Current" window={current}/><WindowDetails label="Previous" window={comparison.previous}/></div>:null}
         </div>
       })}</div>
     </div>
-    {summary.pace!==null?<p className="period-pace" aria-label={`Simple pace estimate: approximately ${number(summary.pace)} applications this UTC month, extrapolated from the month-to-date total and elapsed fractional UTC days.`}>At current pace: ~{number(summary.pace)} applications this month</p>:null}
+    {summary.pace!==null?<p className="period-pace" aria-label={`Simple pace estimate: approximately ${number(summary.pace)} applications this UTC month, extrapolated from the month-to-date total and elapsed fractional UTC days.`}>Current pace: ~ <span className="pace-value">{number(summary.pace)}</span> applications/month</p>:null}
   </section>
 }
