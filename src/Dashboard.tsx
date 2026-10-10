@@ -7,7 +7,7 @@ import PeriodSummary from './components/PeriodSummary'
 import RemainingProgress from './components/RemainingProgress'
 import { headerDate, longDate, shortDate } from './utils/format'
 import { draftFor } from './utils/drafts'
-import { copyPopoutStyles, openCompactPopout, pictureInPicture } from './utils/popout'
+import useFloatingWindow from './hooks/useFloatingWindow'
 import EntryForm, { type EntryDraft } from './components/EntryForm'
 import DayCountForm, {type DayDraft} from './components/DayCountForm'
 import GoalForm, { type GoalDraft } from './components/GoalForm'
@@ -28,39 +28,21 @@ function Brand({showMark=true}:{showMark?:boolean}){return <div className="brand
 export default function Dashboard({floating=false,onOpenDashboard}:{floating?:boolean;onOpenDashboard?:()=>void}={}){
   const state=useSyncExternalStore(engine.subscribe,engine.getState)
   const [today,setToday]=useState(utcDay),[mode,setMode]=useState(currentMode),[range,setRange]=useState<7|15|30>(7),[selected,setSelected]=useState(initialSelected),[dialog,setDialog]=useState<DialogState>(null),[toast,setToast]=useState<{message:string;entryId?:string}|null>(null),[visibleCount,setVisibleCount]=useState(10),[install,setInstall]=useState<InstallEvent|null>(null),[update,setUpdate]=useState<ServiceWorker|null>(null),[nav,setNav]=useState('today')
-  const [floatingWindow,setFloatingWindow]=useState<Window|null>(null),[openingFloat,setOpeningFloat]=useState(false)
-  const openingRef=useRef(false)
-  const topRef=useRef<HTMLElement>(null),historyRef=useRef<HTMLElement>(null),toastTimer=useRef<ReturnType<typeof setTimeout>|null>(null),deleteGuard=useRef(false),popoutRef=useRef<Window|null>(null)
+  const topRef=useRef<HTMLElement>(null),historyRef=useRef<HTMLElement>(null),toastTimer=useRef<ReturnType<typeof setTimeout>|null>(null),deleteGuard=useRef(false)
+  const {floatingWindow,opening:openingFloat,open:popOut}=useFloatingWindow(notify)
   useEffect(()=>{
     void engine.init()
     const day=()=>setToday(utcDay()),timer=setInterval(day,1000),focus=()=>{day();void engine.sync()},onInstall=(e:Event)=>{e.preventDefault();setInstall(e as InstallEvent)}
     if(floating)return()=>clearInterval(timer)
+    const controller=new AbortController()
     window.addEventListener('focus',focus);window.addEventListener('beforeinstallprompt',onInstall)
-    void registerPwa(setUpdate).catch(()=>{/* The website remains usable if service workers are unavailable. */})
-    return()=>{clearInterval(timer);window.removeEventListener('focus',focus);window.removeEventListener('beforeinstallprompt',onInstall)}
+    void registerPwa(setUpdate,controller.signal).catch(()=>{/* The website remains usable if service workers are unavailable. */})
+    return()=>{controller.abort();clearInterval(timer);window.removeEventListener('focus',focus);window.removeEventListener('beforeinstallprompt',onInstall)}
   },[floating])
-  useEffect(()=>()=>{popoutRef.current?.close()},[])
+  useEffect(()=>()=>{if(toastTimer.current)clearTimeout(toastTimer.current)},[])
   useEffect(()=>{if(floating)return;const handler=()=>{setMode(currentMode());setSelected(initialSelected())};window.addEventListener('popstate',handler);return()=>window.removeEventListener('popstate',handler)},[floating])
   function notify(message:string,entryId?:string){if(toastTimer.current)clearTimeout(toastTimer.current);if(message){setToast({message,entryId});toastTimer.current=setTimeout(()=>setToast(null),7000)}}
-  async function popOut(){
-    if(openingRef.current)return
-    if(popoutRef.current&&!popoutRef.current.closed){popoutRef.current.focus();return}
-    openingRef.current=true;setOpeningFloat(true)
-    let popup:Window|null=null
-    try{
-      popup=await openCompactPopout(pictureInPicture())
-      if(popup.closed)return
-      copyPopoutStyles(document,popup.document)
-      const opened=popup
-      opened.addEventListener('pagehide',()=>{
-        if(popoutRef.current===opened){popoutRef.current=null;setFloatingWindow(null)}
-      },{once:true})
-      popoutRef.current=opened;setFloatingWindow(opened)
-    }catch(e){
-      popup?.close()
-      notify(pictureInPicture()?'The floating window could not open. Click the button again in desktop Chrome.':e instanceof Error?e.message:'Open Vigil directly in desktop Chrome to use floating view.')
-    }finally{openingRef.current=false;setOpeningFloat(false)}
-  }
+
   function changeMode(next:'full'|'compact'){setMode(next);try{localStorage.setItem('vigil.mode.v1',next)}catch{/* The route still preserves compact mode. */}history.pushState({},'',`${next==='compact'?'/compact':'/'}${selected?'?day='+selected:''}`)}
   function chooseDay(day:string|null){if(day){try{assertDay(day,utcDay())}catch{return}}setSelected(day);setVisibleCount(10);const url=new URL(location.href);if(day)url.searchParams.set('day',day);else url.searchParams.delete('day');history.replaceState({},'',url.pathname+url.search)}
   function custom(category:EntryDraft['category']){setDialog({type:'entry',draft:{kind:'entry',category,date:utcDay(),easy:category==='external'?'0':'1',external:category==='external'?'1':'0'}})}
@@ -73,19 +55,19 @@ export default function Dashboard({floating=false,onOpenDashboard}:{floating?:bo
       try{await engine.resolveConflict(op.id,'cloud');setDialog(op.type==='delete'?{type:'delete',entry:cloud}:{type:'entry',draft:{...draftFor(cloud),easy:String(op.easy),external:String(op.external),date:op.date}})}catch(e){notify(e instanceof Error?e.message:'Reopen this entry to review its latest value.')}
     }else void engine.resolveConflict(op.id,'mine').catch(e=>notify(e.message))
   }
-  const s=state.snapshot,compact=floating||mode==='compact',popout=floating
+  const s=state.snapshot,compact=floating||mode==='compact'
   if(!s)return <main className="page login-page"><div className="login-shell"><Brand/><h1>Your daily watch</h1>{state.status==='auth'?<LoginForm onDone={()=>notify('Welcome to Vigil.')}/>:<div className="loading-workspace"><p>{state.error??'Loading your private workspace…'}</p>{state.status==='retry'&&<button onClick={()=>{void engine.sync()}}>Retry</button>}</div>}<footer>Personal application tracker · UTC</footer></div></main>
-  const a=analytics(s,range,today),totals=s.entries.filter(e=>!e.deleted),todayEasy=totals.filter(e=>e.date===today).reduce((n,e)=>n+e.easy,0),todayExternal=a.total-todayEasy,last=[...totals].sort((a,b)=>b.loggedAt.localeCompare(a.loggedAt)||b.id.localeCompare(a.id))[0],day=selected??today,hours=hourlyFor(s,day),recent=[...totals].filter(e=>!selected||e.date===selected).sort((a,b)=>b.loggedAt.localeCompare(a.loggedAt)||b.id.localeCompare(a.id)),pendingIds=new Set(state.queue.flatMap(q=>q.operation.type==='day'?[q.operation.additionId,...q.operation.expected.map(e=>e.id)]:q.operation.type==='create'?[q.operation.entry.id]:'entryId'in q.operation?[q.operation.entryId]:[])),conflict=state.queue.find(q=>q.status==='conflict'||q.status==='invalid')
+  const a=analytics(s,range,today),totals=s.entries.filter(e=>!e.deleted).sort((a,b)=>b.loggedAt.localeCompare(a.loggedAt)||b.id.localeCompare(a.id)),todayEasy=totals.filter(e=>e.date===today).reduce((n,e)=>n+e.easy,0),todayExternal=a.total-todayEasy,last=totals[0],day=selected??today,hours=hourlyFor(s,day),recent=totals.filter(e=>!selected||e.date===selected),pendingIds=new Set(state.queue.flatMap(q=>q.operation.type==='day'?[q.operation.additionId,...q.operation.expected.map(e=>e.id)]:q.operation.type==='create'?[q.operation.entry.id]:'entryId'in q.operation?[q.operation.entryId]:[])),conflict=state.queue.find(q=>q.status==='conflict'||q.status==='invalid')
   const selectedTotals=totals.filter(e=>e.date===day).reduce((sum,e)=>({easy:sum.easy+e.easy,external:sum.external+e.external}),{easy:0,external:0})
   function editDayCounts(){setDialog({type:'day',draft:{kind:'day',date:day,easy:String(selectedTotals.easy),external:String(selectedTotals.external),expected:totals.filter(e=>e.date===day).map(({id,version,easy,external,loggedAt})=>({id,version,easy,external,loggedAt}))}})}
   function close(){if(dialog?.type==='entry'||dialog?.type==='day'||dialog?.type==='goal')void engine.clearDraft();setDialog(null)}
   function finish(message:string,entryId?:string){setDialog(null);notify(message,entryId)}
   function scroll(which:'today'|'history'){setNav(which);const target=which==='today'?topRef:historyRef;target.current?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'})}
-  return <><main className={`page${compact?' compact-page':''}${popout?' popout-page':''}`}>
+  return <><main className={`page${compact?' compact-page':''}${floating?' popout-page':''}`}>
     <div className={`shell${compact?' compact-shell':''}`}>
       {!compact&&<nav className="rail" aria-label="Main navigation"><img className="rail-brand-mark" src="/mark.svg" alt="" aria-hidden="true"/><button className={nav==='today'?'on':''} aria-label="Today" aria-current={nav==='today'?'page':undefined} onClick={()=>scroll('today')}><Icon name="today" size={17*1.25}/></button><button className={nav==='history'?'on':''} aria-label="History" aria-current={nav==='history'?'page':undefined} onClick={()=>scroll('history')}><Icon name="history" size={17*1.25}/></button><div className="rail-spacer"/><button aria-label="Settings" onClick={()=>setDialog({type:'settings'})}><Icon name="settings" size={20*1.25}/></button></nav>}
       <div className="workspace">
-        <header className="header"><div className="header-identity"><Brand showMark={compact}/><time className="utc-date" dateTime={today} title={`${longDate(today)} · UTC`} aria-label={`${headerDate(today)} · UTC`}>{headerDate(today)}</time></div><div className="header-spacer"/><button className={`sync-status ${state.status}`} onClick={()=>state.status==='auth'?setDialog({type:'login'}):void engine.sync()} aria-label={`${syncLabel(state)}. ${state.status==='saved'?'Refresh cloud data':'Retry sync'}`}><i/>{syncLabel(state)}</button><button className="icon-button mode-button" aria-label={compact?'Open dashboard':'Open compact view'} title={compact?'Open dashboard':'Compact view'} onClick={()=>changeMode(compact?'full':'compact')}><Icon name={compact?'expand':'compact'}/></button>{!popout&&<button className="icon-button popout-button" aria-label="Pop out compact view" aria-pressed={!!floatingWindow} title={floatingWindow?"Focus floating view":"Always-on-top floating view"} disabled={openingFloat} onClick={()=>{void popOut()}}><Icon name="popout"/></button>}<button className="icon-button header-settings" aria-label="Open settings" title="Settings" onClick={()=>setDialog({type:'settings'})}><Icon name="settings" size={20}/></button></header>
+        <header className="header"><div className="header-identity"><Brand showMark={compact}/><time className="utc-date" dateTime={today} title={`${longDate(today)} · UTC`} aria-label={`${headerDate(today)} · UTC`}>{headerDate(today)}</time></div><div className="header-spacer"/><button className={`sync-status ${state.status}`} onClick={()=>state.status==='auth'?setDialog({type:'login'}):void engine.sync()} aria-label={`${syncLabel(state)}. ${state.status==='saved'?'Refresh cloud data':'Retry sync'}`}><i/>{syncLabel(state)}</button>{!compact&&<button className="icon-button" aria-label="Open compact view" title="Compact view" onClick={()=>changeMode('compact')}><Icon name="compact"/></button>}{!floating&&<button className="icon-button popout-button" aria-label="Pop out compact view" aria-pressed={!!floatingWindow} title={floatingWindow?"Focus floating view":"Always-on-top floating view"} disabled={openingFloat} onClick={()=>{void popOut()}}><Icon name="popout"/></button>}<button className="icon-button header-settings" aria-label="Open settings" title="Settings" onClick={()=>setDialog({type:'settings'})}><Icon name="settings" size={20}/></button></header>
         {state.error&&!conflict&&<div className="connection-note" role="status">{state.error} <button onClick={()=>{void engine.sync()}}>Retry</button></div>}
         {update&&<div className="update-note">An update is ready. <button disabled={state.queue.length>0||!!state.draft||!!dialog} onClick={()=>{navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload(),{once:true});update.postMessage({type:'ACTIVATE'})}}>Update Vigil</button>{(state.queue.length>0||!!state.draft)&&<span>Finish your entry and sync first.</span>}</div>}
         {!!state.draft&&!dialog&&<div className="draft-note">You have a retained draft.<button onClick={()=>{const d=state.draft as EntryDraft|DayDraft|GoalDraft;setDialog(d.kind==='entry'?{type:'entry',draft:d}:d.kind==='day'?{type:'day',draft:d}:{type:'goal',draft:d})}}>Resume draft</button></div>}
@@ -104,7 +86,7 @@ export default function Dashboard({floating=false,onOpenDashboard}:{floating?:bo
     {toast&&<div className="toast" role="status"><span>{toast.message}</span>{toast.entryId&&<button onClick={()=>{const e=state.snapshot?.entries.find(e=>e.id===toast.entryId&&!e.deleted);void undo(e);setToast(null)}}>Undo</button>}<button className="toast-close" aria-label="Dismiss message" onClick={()=>setToast(null)}><Icon name="close" size={14}/></button></div>}
     {dialog&&<Modal title={dialog.type==='entry'?(dialog.draft.entryId?'Edit application entry':dialog.draft.category==='mixed'?'Mixed batch':'Custom application count'):dialog.type==='day'?'Edit day counts · '+dialog.draft.date+' UTC':dialog.type==='goal'?'Daily goal':dialog.type==='settings'?'Settings':dialog.type==='login'?'Owner sign-in':dialog.entry.date<utcDay()?'Confirm past-day decrease':'Delete this entry?'} onClose={close}>
       {dialog.type==='day'&&<DayCountForm draft={dialog.draft} onDone={finish}/>}
-      {dialog.type==='entry'&&<EntryForm draft={dialog.draft} onDone={finish}/>}{dialog.type==='goal'&&<GoalForm draft={dialog.draft} onDone={()=>finish('Goal retained.')}/>}{dialog.type==='settings'&&<Settings state={state} install={install} onDone={finish} onLogin={()=>setDialog({type:'login'})}/>}{dialog.type==='login'&&<LoginForm onDone={()=>finish('Signed in. Syncing retained changes.')}/>}
+      {dialog.type==='entry'&&<EntryForm draft={dialog.draft} onDone={finish}/>}{dialog.type==='goal'&&<GoalForm draft={dialog.draft} onDone={finish}/>}{dialog.type==='settings'&&<Settings state={state} install={install} onDone={finish} onLogin={()=>setDialog({type:'login'})}/>}{dialog.type==='login'&&<LoginForm onDone={()=>finish('Signed in. Syncing retained changes.')}/>}
       {dialog.type==='delete'&&<><p className="form-note">Remove {number(dialog.entry.easy+dialog.entry.external)} applications from {dialog.entry.date} UTC?<br/>{entryLabel(dialog.entry)}</p><p className="fine-print">The entry is marked deleted and excluded from totals.</p>{dialog.entry.date<utcDay()&&<div className="delete-review"><strong>Double-check {dialog.entry.date} UTC</strong><p>Easy Apply: {number(totals.filter(e=>e.date===dialog.entry.date).reduce((n,e)=>n+e.easy,0))} → {number(totals.filter(e=>e.date===dialog.entry.date&&e.id!==dialog.entry.id).reduce((n,e)=>n+e.easy,0))}</p><p>External / form: {number(totals.filter(e=>e.date===dialog.entry.date).reduce((n,e)=>n+e.external,0))} → {number(totals.filter(e=>e.date===dialog.entry.date&&e.id!==dialog.entry.id).reduce((n,e)=>n+e.external,0))}</p></div>}<div className="form-actions"><button onClick={close}>Cancel</button><button className="danger-button" onClick={()=>{if(deleteGuard.current)return;deleteGuard.current=true;void engine.deleteEntry(dialog.entry.id,dialog.entry.version).then(()=>finish('Entry deleted.')).catch(e=>notify(e.message)).finally(()=>{deleteGuard.current=false})}}>Delete entry</button></div></>}
     </Modal>}
   </main>{!floating&&floatingWindow&&createPortal(<Dashboard floating onOpenDashboard={()=>{changeMode('full');window.focus()}}/>,floatingWindow.document.body)}</>

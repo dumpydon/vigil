@@ -82,3 +82,13 @@ All publishing steps are now complete; production starts empty following the own
 - Closing cleared the source button's active state. Reopening retained 18; Open dashboard kept the floating card compact while returning to the source dashboard.
 - The fixture used the production CSS link, confirming stylesheet transfer as well as the inline development stylesheet path.
 - Five focused PiP tests and ten sync tests passed, along with the production build and focused ESLint.
+
+## Cleanup and README refresh · October 11, 2026
+
+The review covered the interface, sync engine, shared model, Worker, and build/setup scripts. Cleanup removed 58 overwritten CSS declarations, 11 obsolete CSS rules, three unused icon variants, and the redundant App re-export. CSS is now formatted for reading. Entry history sorts once for both recent rows and Undo.
+
+Floating-window lifecycle now lives in a hook, with a guard for requests resolving after unmount. Toast timers and PWA focus/update listeners are cleaned up when their view closes. Cancelling the goal form no longer reports a successful save.
+
+Minimal verification: one production build, focused ESLint, and seven tests covering the PiP API and PWA listener lifecycle passed. A single demo-browser pass checked the desktop layout, narrow compact layout without horizontal overflow, and goal cancellation. No full API suite or deployment checks were run.
+
+README screenshots use an isolated in-memory fixture and a fixed demonstration clock. No personal entries or credentials appear in them, and the fixture never opens IndexedDB or sends API requests. The committed images are in docs/images.
