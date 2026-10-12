@@ -1,9 +1,15 @@
-type Name='today'|'history'|'settings'|'compact'|'popout'|'undo'|'close'|'arrow'|'calendar'|'download'|'upload'|'logout'|'edit'
+type Name='today'|'history'|'settings'|'compact'|'popout'|'undo'|'close'|'arrow'|'calendar'|'download'|'upload'|'logout'|'edit'|'bell'|'clock'|'trash'|'gauge'|'goal-check'|'check'
 const paths:Record<Exclude<Name,'settings'>,string[]>={
   today:['M3 10 12 3l9 7','M5 9v12h14V9','M9 21v-8h6v8'],history:['M4 20V10','M10 20V4','M16 20v-8','M22 20H2'],
   compact:['M4 4h16v16H4Z','M4 9h16','M9 9v11'],
   popout:['M14 3h7v7','M21 3l-9 9','M10 3H3v18h18v-7'],
   calendar:['M4 5h16v16H4Z','M8 3v4','M16 3v4','M4 10h16'],
+  bell:['M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9','M10 21a2 2 0 0 0 4 0'],
+  clock:['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18','M12 7v5l3 2'],
+  trash:['M3 6h18','M9 6V3h6v3','M5 6l1 15h12l1-15','M10 10v7','M14 10v7'],
+  gauge:['M3.34 19a10 10 0 1 1 17.32 0','M12 13l4-5'],
+  'goal-check':['M21 11.1V12a9 9 0 1 1-5.34-8.23','m9 11 3 3L22 4'],
+  check:['m5 12 4 4L19 6'],
   undo:['M8 4 3 9l5 5','M3 9h10a7 7 0 1 1 0 14'],close:['m5 5 14 14','M19 5 5 19'],arrow:['M5 12h14','m13 6 6 6-6 6'],
   download:['M12 3v12','m6 10 6 6 6-6','M4 17v4h16v-4'],upload:['M12 16V4','m6 10 6-6 6 6','M4 17v4h16v-4'],logout:['M9 3H3v18h6','M9 12h12','m16 7 5 5-5 5'],
   edit:['m16 4 4 4','M4 20l5-1L20 8a2.83 2.83 0 0 0-4-4L5 15l-1 5Z'],

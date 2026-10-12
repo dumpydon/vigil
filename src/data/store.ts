@@ -11,6 +11,9 @@ export type SyncStatus='loading'|'saving'|'saved'|'offline'|'retry'|'auth'
 export interface AppState {
   snapshot:Snapshot|null;queue:QueueRecord[];status:SyncStatus;error:string|null;initialized:boolean;draft:unknown
 }
+export interface LocalMetadataStore {
+  updateLocalValue<T>(key:`ui.${string}`,initial:T,change:(value:T)=>T):Promise<{value:T;changed:boolean}>
+}
 type Options={name?:string;clock?:()=>Date;fetcher?:typeof fetch;online?:()=>boolean;broadcast?:boolean;autoRetry?:boolean}
 const replaceGoal=(goals:Snapshot['policies'],date:string,value:number)=>[...goals.filter(g=>g.date!==date),{date,value}].sort((a,b)=>a.date.localeCompare(b.date))
 
@@ -188,6 +191,17 @@ export class SyncEngine {
     await this.db.put('meta',draft,'draft');this.emit({draft})
   }
   async clearDraft(){if(this.db){await this.db.delete('meta','draft');this.emit({draft:null})}}
+  async updateLocalValue<T>(key:`ui.${string}`,initial:T,change:(value:T)=>T):Promise<{value:T;changed:boolean}>{
+    await this.init()
+    if(!this.db)throw new Error('Local storage is unavailable.')
+    const tx=this.db.transaction('meta','readwrite')
+    try{
+      const stored=await tx.store.get(key) as T|undefined,current=stored??initial,next=change(current)
+      const changed=next!==current
+      if(changed)await tx.store.put(next,key)
+      await tx.done;return {value:next,changed}
+    }catch(error){try{tx.abort()}catch{/* Already finished. */}await tx.done.catch(()=>{});throw error}
+  }
   private async acquireLease(){
     if(!this.db)return false
     const tx=this.db.transaction('meta','readwrite'),lease=await tx.store.get('lease') as Lease|undefined,now=Date.now()

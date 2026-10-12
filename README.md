@@ -13,6 +13,13 @@ A personal job-application tracker for LinkedIn Easy Apply and external forms. L
 
 </details>
 
+<details>
+<summary>View the alerts inbox</summary>
+
+![Vigil alerts with demonstration data](docs/images/alerts.jpg)
+
+</details>
+
 *Screenshots use demonstration data.*
 
 ## What you can do
@@ -20,10 +27,13 @@ A personal job-application tracker for LinkedIn Easy Apply and external forms. L
 - Add +1, +2, +3, +5, custom counts, or a mixed batch.
 - Track daily progress, 7/15/30-day charts, period totals, and goal streaks.
 - Correct past days with a before/after confirmation, or undo an entry.
+- See quiet progress alerts: at most three per day and 21 per rolling week, retained for 15 days.
 - Keep logging offline after your first sign-in and load; sync when connected.
 - Export a JSON backup or CSV, and merge a backup without duplicating records.
 
 Vigil is for one owner. Counts are entered manually; it does not submit applications.
+
+The sidebar bell shows daily overviews, halfway progress, goal completions, streak milestones, comeback messages, best-day records, total-application milestones, evening check-ins, and Monday recaps. Alerts appear while Vigil is open and stay in the existing device cache. Read or clear them from the inbox, or pause them for the current UTC day.
 
 ## Floating compact view
 
