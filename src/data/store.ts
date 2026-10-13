@@ -1,5 +1,7 @@
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb'
 import { DEFAULT_GOAL, FIRST_DAY, goalFor, planDayAdjustment, shiftDay, utcDay, validateMutation, type DayEntry, type Entry, type Mutation, type MutationResult, type Snapshot } from '../../shared/model'
+import {desktopFetcher,isNative,isDesktopPreview} from '../desktop/bridge'
+import {previewFetcher} from '../desktop/preview'
 
 export type QueueRecord={operation:Mutation;sequence:number;status:'pending'|'inflight'|'conflict'|'invalid';error?:string;cloudEntry?:Entry|null;cloudGoal?:number}
 type Lease={owner:string;until:number}
@@ -337,7 +339,7 @@ export class SyncEngine {
     if(typeof window!=='undefined'){window.removeEventListener('focus',this.wake);window.removeEventListener('online',this.wake);window.removeEventListener('offline',this.wentOffline);document.removeEventListener('visibilitychange',this.visibility)}
   }
 }
-export const engine=new SyncEngine()
+export const engine=new SyncEngine(isNative?{fetcher:desktopFetcher}:isDesktopPreview?{name:'apply-vigil-isolated-preview',fetcher:previewFetcher()}: {})
 // Storage/sync code needs a clean instance on a development update. Durable state survives reload.
 if(import.meta.hot)import.meta.hot.accept(()=>location.reload())
 export function emptySnapshot(day=utcDay()):Snapshot{return {entries:[],policies:[{date:FIRST_DAY,value:DEFAULT_GOAL}],overrides:[],trackingStart:day,revision:0,goalRevision:0,serverNow:new Date().toISOString()}}

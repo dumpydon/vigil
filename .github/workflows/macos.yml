@@ -1,0 +1,38 @@
+name: Mac bundle build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['macos-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run macos:build
+      - run: npm run macos:verify
+      - name: Preserve the application bundle and executable permissions
+        run: ditto -c -k --keepParent 'output/macos/Apply Vigil.app' output/macos/ApplyVigil-ci.zip
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: apply-vigil-macos-${{ github.sha }}
+          path: output/macos/ApplyVigil-ci.zip
+          retention-days: 14
+          if-no-files-found: error
+
+# Native GUI smoke tests run locally with npm run macos:test. This workflow
+# validates the compiled bundle without requiring an interactive WindowServer.
+# App bundles are private build artifacts; this job does not publish a release.

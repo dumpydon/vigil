@@ -35,6 +35,25 @@ Vigil is for one owner. Counts are entered manually; it does not submit applicat
 
 The sidebar bell shows daily overviews, halfway progress, goal completions, streak milestones, comeback messages, best-day records, total-application milestones, evening check-ins, and Monday recaps. Alerts appear while Vigil is open and stay in the existing device cache. Read or clear them from the inbox, or pause them for the current UTC day.
 
+## Mac menu bar app
+
+**Apply Vigil** is a local macOS companion with no Dock icon. It reuses the same
+Cloudflare workspace and offline sync engine, with menu bar progress, a pinnable
+panel, a floating compact window, native backup dialogs, optional notifications,
+and quiet sounds.
+
+```sh
+npm run macos:build
+npm run macos:test
+npm run macos:install
+```
+
+Requires macOS 13+, Command Line Tools, and Node 22.14+. Sign in once using the
+existing workspace's owner password. This first build is for the existing owner;
+public downloads and multi-user setup are future work.
+
+[Mac app guide](docs/macos.md) · [Plan and reference research](docs/macos-plan.md)
+
 ## Floating compact view
 
 In desktop Chrome, click **Pop out compact view** in the top row. The compact card stays above other tabs and apps, can be moved and resized, and shares live counts with the dashboard. **Open dashboard** returns to the source tab.
