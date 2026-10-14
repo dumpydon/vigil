@@ -1,7 +1,7 @@
 # Public download page
 
 Source: `site/download/`; build: `scripts/build-download-site.mjs`; destination:
-<https://vigil.dumpydon.workers.dev/download/>. The existing tracker remains `/`.
+<https://vigil.dumpydon.workers.dev/>. The owner tracker lives at `/dashboard/`; old `/download/` links redirect to the homepage.
 The website and release assets need no app account or new hosting service.
 
 The requested visual reference is <https://www.vigilbar.com/>. Its creator's
@@ -46,9 +46,8 @@ The source contains:
 - `release.json`: generated version, asset URLs, sizes and SHA-512 values.
 - `assets/`: original icon and mark; generated original sounds are ignored in Git.
 
-`npm run dev` prepares sound assets and serves `/download/` alongside the app.
-`npm run build` includes the public pages in `dist/download/`. The tracker service
-worker excludes that subtree. Static CSP allows same-origin demo/guide frames
+`npm run dev` serves the public site at `/` and owner app at `/dashboard/` on one server.
+`npm run build` writes the public homepage to `dist/index.html`, the app to `dist/dashboard/`, and shared marketing assets to `dist/download/`. Public documents have canonical `/install/`, `/privacy/`, `/changelog/`, `/tour/`, and `/first-launch/` routes. The app service worker is scoped to `/dashboard/` and ignores public pages. Static CSP allows same-origin demo/guide frames
 while preserving strict script restrictions and the tracker framing boundary.
 
 Before a release, verify desktop and narrow layouts, the internal scroll region,

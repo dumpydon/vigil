@@ -32,6 +32,11 @@
   }
   function tip(text){const box=one('.demo-tip');if(!box)return;box.textContent=text;box.classList.add('on');clearTimeout(tipTimer);tipTimer=setTimeout(()=>box.classList.remove('on'),2600)}
   function pulse(){if(motion.matches)return;all('.metric,.category-count').forEach(el=>{el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse')})}
+  function buttonFeedback(button){
+    if(motion.matches||!document.body.classList.contains('interactive-demo'))return;
+    button.classList.remove('demo-tap');void button.offsetWidth;button.classList.add('demo-tap');
+    button.addEventListener('animationend',()=>button.classList.remove('demo-tap'),{once:true});
+  }
   function add(category,amount){
     if(usageController){usageController.add(category,amount);return}
     if(!['easy','external'].includes(category)||!Number.isInteger(amount)||amount<1||amount>500)return;
@@ -50,7 +55,7 @@
     form.addEventListener('submit',e=>{e.preventDefault();if(!form.reportValidity())return;const values={};fields.forEach(f=>{values[f.name]=Number(form.elements.namedItem(f.name).value)});onConfirm(values);d.close()});
     d.append(form);document.body.append(d);d.addEventListener('close',()=>d.remove(),{once:true});d.addEventListener('click',e=>{const r=d.getBoundingClientRect();if(e.target===d&&(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom))d.close()});d.showModal();
   }
-  all('[data-add]').forEach(b=>b.addEventListener('click',()=>add(b.dataset.add,Number(b.dataset.amount))));
+  all('[data-add]').forEach(b=>b.addEventListener('click',()=>{add(b.dataset.add,Number(b.dataset.amount));buttonFeedback(b)}));
   all('[data-undo]').forEach(b=>b.addEventListener('click',()=>{const previous=undo.pop();if(!previous){message('No new sample entry to undo');return}Object.assign(state,previous);render();message('Latest entry undone')}));
   all('[data-goal]').forEach(b=>b.addEventListener('click',()=>dialog({title:b.textContent.trim()==='Edit counts'?'Edit day counts':'Daily goal',description:'Try changing this sample. Your own records are never used in the preview.',fields:b.textContent.trim()==='Edit counts'?[{name:'easy',label:'LinkedIn Easy Apply',value:state.easy},{name:'external',label:'External / form',value:state.external}]:[{name:'goal',label:'Applications per day',value:state.goal,min:1,max:999}],onConfirm:values=>{undo.push({...state});Object.assign(state,values);render();message('Sample updated')}})));
   all('[data-custom]').forEach(b=>b.addEventListener('click',()=>{const category=b.dataset.custom;dialog({title:category==='mixed'?'Mixed batch':'Custom application count',fields:category==='mixed'?[{name:'easy',label:'LinkedIn Easy Apply',value:1},{name:'external',label:'External / form',value:1}]:[{name:'count',label:label(category)+' applications',value:1,min:1}],onConfirm:values=>{if(category==='mixed'){undo.push({...state});state.easy+=values.easy;state.external+=values.external;render();pulse();message('Mixed batch added')}else add(category,values.count)}})}));
@@ -68,47 +73,61 @@
   all('[data-sound]').forEach(b=>b.addEventListener('click',()=>{all('[data-sound]').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-checked',String(x===b))});one('[data-sound-label]').textContent=b.dataset.sound+' selected · visual preview'}));
   function reset(){Object.assign(state,initial);undo.length=0;if(usageController)usageController.reset();render();one('.demo-message')?.classList.remove('on');one('.virtual-cursor')?.classList.remove('on')}
   const interactiveStory=query.get('animate')==='1'&&query.get('tour')!=='1';
-  let storyInterrupted=false,storyStarted=false,storyObserver=null;
-  function stopStory(){
-    storyInterrupted=true;storyTimers.forEach(clearTimeout);storyTimers=[];storyObserver?.disconnect();
-    one('.virtual-cursor')?.classList.remove('on','click');all('.demo-highlight').forEach(el=>el.classList.remove('demo-highlight'));
+  if(interactiveStory)document.body.classList.add('interactive-demo');
+  let storyInterrupted=false,storyStarted=false,storyObserver=null,storyInView=false,revealInvitation=null;
+  function hideStory(){
+    storyTimers.forEach(clearTimeout);storyTimers=[];
+    one('.virtual-cursor')?.classList.remove('on','click');one('.cursor-label')?.classList.remove('on');
+    all('.demo-highlight,.demo-invite').forEach(el=>el.classList.remove('demo-highlight','demo-invite'));
   }
+  function stopStory(){storyInterrupted=true;storyObserver?.disconnect();hideStory()}
   function story(){
     if(motion.matches||storyInterrupted||query.get('tour')==='1')return;
-    const surface=one('.surface'),cursor=one('.virtual-cursor'),first=one('[data-add="easy"][data-amount="1"]');
+    const surface=one('.surface'),cursor=one('.virtual-cursor'),first=one('[data-add="easy"][data-amount="3"]');
     if(!surface||!cursor||!first)return;
+    let cue=one('.cursor-label');
+    if(!cue){cue=document.createElement('span');cue.className='cursor-label';cue.textContent='Click here';cue.setAttribute('aria-hidden','true');surface.append(cue)}
     storyStarted=true;document.body.classList.add('interactive-demo');storyTimers.forEach(clearTimeout);storyTimers=[];
     // Translate to the surface's own coordinates, including its compact scale.
     function point(target,dx=0,dy=0){
       const rect=target.getBoundingClientRect(),bounds=surface.getBoundingClientRect(),scale=surface.offsetWidth/bounds.width;
-      cursor.style.left=((rect.left-bounds.left+rect.width/2)*scale+dx)+'px';
-      cursor.style.top=((rect.top-bounds.top+rect.height/2)*scale+dy)+'px';
+      const x=(rect.left-bounds.left+rect.width/2)*scale+dx,y=(rect.top-bounds.top+rect.height/2)*scale+dy;
+      cursor.style.left=x+'px';cursor.style.top=y+'px';
+      cue.style.left=(x-12)+'px';cue.style.top=(y+27)+'px';
     }
     function later(delay,action){storyTimers.push(setTimeout(action,delay))}
-    function press(target){cursor.classList.add('click');target.classList.add('demo-highlight');add(target.dataset.add,Number(target.dataset.amount))}
+    function press(target){cursor.classList.add('click');target.classList.add('demo-highlight');buttonFeedback(target);add(target.dataset.add,Number(target.dataset.amount))}
     function release(){cursor.classList.remove('click');all('.demo-highlight').forEach(el=>el.classList.remove('demo-highlight'))}
+    revealInvitation=()=>{
+      if(storyInterrupted||!storyInView||document.hidden||motion.matches)return;
+      point(first);cursor.classList.add('on');cue.classList.add('on');first.classList.add('demo-invite');
+    };
     point(first,36,-58);
-    later(300,()=>cursor.classList.add('on'));
+    later(300,()=>{cursor.classList.add('on');cue.classList.add('on')});
     later(800,()=>point(first));
     later(1650,()=>press(first));later(1900,release);
     const next=one('[data-add="external"][data-amount="2"]');
     if(next){later(2600,()=>point(next));later(3450,()=>press(next));later(3700,release)}
-    later(4700,()=>cursor.classList.remove('on'));
+    // Leave a readable invitation after the two sample clicks, until real input.
+    later(4700,revealInvitation);
   }
   if(interactiveStory){
     // A visitor takes over permanently on the first input. Never reset their counts.
-    ['pointerdown','pointermove','wheel','touchstart','keydown'].forEach(type=>document.addEventListener(type,event=>{if(event.isTrusted)stopStory()},{capture:true,passive:true}));
-    document.addEventListener('visibilitychange',()=>{if(document.hidden)stopStory()});
+    ['pointerdown','wheel','touchstart','keydown'].forEach(type=>document.addEventListener(type,event=>{if(event.isTrusted)stopStory()},{capture:true,passive:true}));
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden)hideStory();
+      else if(storyInView&&!storyInterrupted){if(storyStarted)revealInvitation?.();else story()}
+    });
     motion.addEventListener('change',()=>{if(motion.matches)stopStory()});
     if(!motion.matches){
       if(typeof IntersectionObserver==='function'){
         storyObserver=new IntersectionObserver(entries=>{
           const entry=entries[0];
-          if(entry.intersectionRatio>=.35&&!storyStarted&&!document.hidden)story();
-          else if(storyStarted&&!entry.isIntersecting)stopStory();
+          if(entry.intersectionRatio>=.35){storyInView=true;if(!document.hidden){if(!storyStarted)story();else revealInvitation?.()}}
+          else if(!entry.isIntersecting){storyInView=false;if(storyStarted)hideStory()}
         },{threshold:[0,.35]});
         storyObserver.observe(one('.surface'));
-      }else story();
+      }else{storyInView=true;story()}
     }
   }
   // Optional same-origin parent orchestration for the landing page's cinematic hero.

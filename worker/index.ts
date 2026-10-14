@@ -1,5 +1,6 @@
 import { assertUuid, canonical, importPreview, makeBackup, planDayAdjustment, shiftDay, utcDay, validateBackup, validateMutation, ValidationError, type Entry, type Goal, type Mutation, type Snapshot } from '../shared/model'
 import { cookieName, cookieToken, hmac, requireOwner, safeOrigin, sessionCookie, SESSION_SECONDS, sha, verifyPassword, type Env } from './security'
+import {siteRoute} from '../shared/routes'
 
 type Row={id:string;date:string;easy:number;external:number;logged_at:string;created_at:string;updated_at:string;version:number;deleted:number;backdated:number}
 const entryJson="json_object('id',id,'date',date,'easy',easy,'external',external,'loggedAt',logged_at,'createdAt',created_at,'updatedAt',updated_at,'version',version,'deleted',json(CASE WHEN deleted=1 THEN 'true' ELSE 'false' END),'backdated',json(CASE WHEN backdated=1 THEN 'true' ELSE 'false' END))"
@@ -110,12 +111,15 @@ export function createHandler(clock:()=>Date=()=>new Date()){
     const url=new URL(request.url),now=clock(),today=utcDay(now)
     try{
       if(!url.pathname.startsWith('/api/')){
-        const asset=await env.ASSETS.fetch(request)
+        const route=siteRoute(url)
+        if(route.redirect)return new Response(null,{status:308,headers:{Location:route.redirect,'Cache-Control':'no-cache'}})
+        const assetUrl=new URL(request.url);assetUrl.pathname=route.asset
+        const asset=await env.ASSETS.fetch(new Request(assetUrl,request))
         const headers=new Headers(asset.headers)
         headers.set('X-Content-Type-Options','nosniff');headers.set('Referrer-Policy','same-origin')
-        const ancestors=url.pathname.startsWith('/download/')?"'self'":"'none'"
+        const ancestors=route.dashboard?"'none'":"'self'"
         headers.set('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors ${ancestors}; form-action 'self'`)
-        if(url.pathname==='/sw.js')headers.set('Cache-Control','no-cache')
+        if(url.pathname.endsWith('/sw.js')||url.pathname==='/manifest.webmanifest')headers.set('Cache-Control','no-cache')
         return new Response(asset.body,{status:asset.status,headers})
       }
       if(request.method!=='GET'&&!safeOrigin(request))return response({error:'Use a same-origin JSON request.'},403)

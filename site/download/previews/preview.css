@@ -29,5 +29,15 @@ html:has(body.logging-card){color-scheme:normal;--preview-height:432px}
 .logging-card,.logging-card .compact-scene{width:400px;height:432px}
 .logging-card .compact-window{left:0;top:0;height:432px;transform:none}
 .interactive-demo .virtual-cursor{display:block}
-.interactive-demo .demo-highlight{outline:1px solid #a5adff99;outline-offset:2px;box-shadow:0 0 15px #818cf82b}
-@media(prefers-reduced-motion:reduce){.interactive-demo .virtual-cursor{display:none}}
+.cursor-label{position:absolute;z-index:16;pointer-events:none;white-space:nowrap;opacity:0;padding:5px 9px;border:1px solid #b1b8ff;border-radius:8px;background:#31364ff5;color:#fff;font-size:12px;font-weight:700;line-height:16px;letter-spacing:.01em;box-shadow:0 4px 16px #0009;transition:left .7s cubic-bezier(.3,.7,.25,1),top .7s cubic-bezier(.3,.7,.25,1),opacity .2s}
+.cursor-label.on{opacity:1}
+.interactive-demo .demo-highlight,.interactive-demo .demo-invite{outline:2px solid #a5adff;outline-offset:3px;box-shadow:0 0 0 5px #818cf81a,0 0 18px #818cf84d}
+.interactive-demo .quick-actions button{transition:background .15s,box-shadow .15s,transform .15s}
+.interactive-demo .quick-actions button:hover{background:#3a405e;box-shadow:inset 0 0 0 1px #b5bdff80}
+.interactive-demo .external .quick-actions button:hover{background:#29554c;box-shadow:inset 0 0 0 1px #96e5d880}
+.interactive-demo .quick-actions button:active{transform:scale(.94)}
+.interactive-demo .demo-tap{animation:demo-button-tap .45s ease-out}
+.interactive-demo .demo-invite{animation:demo-invite-pulse 1.2s ease-in-out 2}
+@keyframes demo-button-tap{0%{transform:scale(.94);filter:brightness(1.7)}100%{transform:none;filter:none}}
+@keyframes demo-invite-pulse{50%{box-shadow:0 0 0 8px #818cf829,0 0 22px #818cf855}}
+@media(prefers-reduced-motion:reduce){.interactive-demo .virtual-cursor,.cursor-label{display:none}.interactive-demo .quick-actions button:active{transform:none}}

@@ -5,6 +5,11 @@ import {createReplayLoop,pageReplayBudget} from './replay-loop.js'
   const one=(selector,root=document)=>root.querySelector(selector)
   const all=(selector,root=document)=>Array.from(root.querySelectorAll(selector))
   const reduced=matchMedia('(prefers-reduced-motion: reduce)')
+  // Existing installed web apps retain their identity while moving to /dashboard/.
+  if(location.pathname==='/'&&matchMedia('(display-mode: standalone)').matches){location.replace('/dashboard/'+location.search+location.hash);return}
+  if('serviceWorker'in navigator)void navigator.serviceWorker.getRegistration('/').then(legacy=>{
+    if(legacy?.scope===location.origin+'/'&&legacy.active?.scriptURL===location.origin+'/sw.js')void legacy.update().catch(()=>{})
+  }).catch(()=>{})
   const nav=one('.navtoggle'),navMenu=one('#navmenu')
   function navClose(){navMenu?.classList.remove('on');nav?.setAttribute('aria-expanded','false')}
   nav?.addEventListener('click',()=>{const open=navMenu.classList.toggle('on');nav.setAttribute('aria-expanded',String(open))})

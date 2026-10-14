@@ -1,11 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import {siteRoute,publicPages,DASHBOARD_PATH} from './shared/routes.ts'
 
 export default defineConfig({
   plugins: [react(),{name:'apply-vigil-download-preview',configureServer(server){
-    server.middlewares.use((request,_response,next)=>{
-      if(request.url==='/download'||request.url?.startsWith('/download?'))request.url=request.url.replace('/download','/site/download/index.html')
-      else if(request.url?.startsWith('/download/'))request.url=request.url.replace('/download/','/site/download/')
+    server.middlewares.use((request,response,next)=>{
+      const url=new URL(request.url??'/','http://localhost'),route=siteRoute(url)
+      if(route.redirect){response.writeHead(308,{Location:route.redirect});response.end();return}
+      if(route.asset===DASHBOARD_PATH)request.url='/index.html'+url.search
+      else if(publicPages[route.asset])request.url='/site/download/'+publicPages[route.asset]+url.search
+      else if(url.pathname.startsWith('/download/'))request.url='/site/download/'+url.pathname.slice('/download/'.length)+url.search
+      else if(url.pathname==='/sw.js')request.url='/legacy-sw.js'
       next()
     })
   }}],
