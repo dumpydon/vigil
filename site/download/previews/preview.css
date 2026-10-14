@@ -18,6 +18,8 @@
 .tour-demo .virtual-cursor{display:block;transition:none}.tour-demo .virtual-cursor.on{opacity:1}
 .tour-demo .tour-highlight{outline:1px solid #a5adff99;outline-offset:2px;box-shadow:0 0 15px #818cf81a}
 .tour-demo .usage-scroll{scroll-behavior:auto}.tour-paused *{animation-play-state:paused!important}
+html:has(body.tour-demo.compact-preview),body.tour-demo.compact-preview,.tour-demo.compact-preview .compact-scene{height:350px}
+.tour-demo.compact-preview .compact-window{height:432px}
 .tour-demo.alerts-preview .rail{gap:5px;padding:14px 5px 10px}.tour-demo.alerts-preview .rail>.mark{width:24px;height:24px;margin-bottom:8px}
 .tour-demo.alerts-preview .rail button{width:32px;height:32px;min-height:32px}.tour-demo.alerts-preview .rail button .ic{width:20px;height:20px}.tour-demo.alerts-preview .rail .spacer{min-height:4px}
 @media(prefers-reduced-motion:reduce){.tour-demo .virtual-cursor{display:none}}
