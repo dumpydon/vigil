@@ -51,6 +51,12 @@
     if(event.data?.applyVigilSite==='close-modal')closeModal()
     else if(event.data?.applyVigilSite==='show-download'){closeModal();one('#download').scrollIntoView({behavior:reduced.matches?'auto':'smooth'})}
   })
+  addEventListener('message',event=>{
+    const guide=event.data?.applyVigilInstallGuide
+    if(event.origin!==location.origin||!guide||!Number.isFinite(guide.height)||guide.height<200||guide.height>1600)return
+    const frame=all('[data-install-walkthrough]').find(frame=>frame.contentWindow===event.source)
+    if(frame)frame.style.height=`${Math.ceil(guide.height)}px`
+  })
   if(location.hash==='#install')openModal('install')
 
   // Reference reveals: .85-second soft rise, once at 22% visibility.

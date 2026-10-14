@@ -32,6 +32,11 @@ The source contains:
 - `previews/`: product demonstrations without app storage or account access.
 - `demo.html`, `tour.*`: 30-second tour and playback.
 - `install.html`, `guide*`, `pages.js`: illustrated first-launch guide.
+- `first-launch.html`, `first-launch.css`, `first-launch.js`: a 15-second macOS
+  installation walkthrough shared by the main page and install guide. It has
+  pause, replay, seeking and individual steps, and respects reduced motion.
+  The macOS screens are explicitly illustrated; no system settings or passwords
+  are accessed. `docs/images/first-launch.gif` is its README companion.
 - `privacy.html`, `changelog.html`, `document.css`: public product documents.
 - `release.json`: generated version, asset URLs, sizes and SHA-512 values.
 - `assets/`: original icon and mark; generated original sounds are ignored in Git.

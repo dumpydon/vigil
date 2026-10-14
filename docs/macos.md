@@ -12,6 +12,24 @@ Two separate flavors share the interface:
 Public downloads: <https://vigil.dumpydon.workers.dev/download/>. The connected
 owner installation stays separate and is not silently replaced by public builds.
 
+## Approve a downloaded beta’s first launch
+
+The public beta is ad-hoc signed and not notarized by Apple. Its
+[15-second illustrated walkthrough](https://vigil.dumpydon.workers.dev/download/first-launch.html)
+and [written install guide](https://vigil.dumpydon.workers.dev/download/install.html)
+show the download, Applications folder, first-open warning, and app approval.
+
+For an unverified-app or unidentified-developer warning, keep the app in
+Applications and dismiss the dialog with Done (or Cancel / OK). Open System
+Settings → Privacy & Security, scroll to Security, and choose Open Anyway beside
+Apply Vigil. Some macOS versions show Open first. Confirm opening and authenticate
+on your Mac if requested. If the notice has expired, try opening the app again;
+Apple says the button is available for about an hour after an attempt.
+
+Keep Gatekeeper enabled. This flow covers the unverified-developer warning;
+damaged-app or malware warnings require investigation. See
+[Apple’s guidance](https://support.apple.com/en-us/102445).
+
 ## Use the installed app
 
 Open **Apply Vigil** from Applications. Its circle/check icon appears in the
