@@ -69,7 +69,7 @@
     // The full-width block is the same stable fallback used by the reference site.
     const available=parent.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)||wrapper.closest('.block')?.clientWidth
     if(!available)return
-    const scale=Math.min(1,available/width)
+    const scale=Math.min(Number(frame.dataset.maxScale)||1,available/width)
     wrapper.style.width=`${Math.round(width*scale)}px`;wrapper.style.height=`${Math.ceil(height*scale)}px`;frame.style.transform=`scale(${scale})`
   })}
   all('.snap iframe').forEach(frame=>frame.addEventListener('load',fitSnaps));fitSnaps()
