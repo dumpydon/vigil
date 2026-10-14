@@ -89,6 +89,9 @@
   }
   if(typeof ResizeObserver==='function')new ResizeObserver(resize).observe(one('.player'))
   addEventListener('resize',resize)
+  addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&window!==parent){event.preventDefault();parent.postMessage({applyVigilInstallGuide:{close:true}},location.origin)}
+  })
   document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()})
   if(typeof IntersectionObserver==='function')new IntersectionObserver(entries=>{
     const visible=entries.some(entry=>entry.isIntersecting)

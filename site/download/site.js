@@ -53,9 +53,11 @@
   })
   addEventListener('message',event=>{
     const guide=event.data?.applyVigilInstallGuide
-    if(event.origin!==location.origin||!guide||!Number.isFinite(guide.height)||guide.height<200||guide.height>1600)return
+    if(event.origin!==location.origin||!guide)return
     const frame=all('[data-install-walkthrough]').find(frame=>frame.contentWindow===event.source)
-    if(frame)frame.style.height=`${Math.ceil(guide.height)}px`
+    if(!frame)return
+    if(guide.close===true){closeModal();return}
+    if(Number.isFinite(guide.height)&&guide.height>=200&&guide.height<=1600)frame.style.height=`${Math.ceil(guide.height)}px`
   })
   if(location.hash==='#install')openModal('install')
 
