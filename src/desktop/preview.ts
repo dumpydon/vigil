@@ -1,5 +1,5 @@
 import {FIRST_DAY,utcDay,shiftDay,type Snapshot,type Mutation} from '../../shared/model'
-import {project} from '../data/store'
+import {project} from '../data/operations'
 
 // Isolated, synthetic browser preview. It never reads or writes the live workspace.
 export function previewFetcher():typeof fetch{

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" style="--preview-height:636px"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="robots" content="noindex,nofollow"><title>Usage and history · Apply Vigil preview</title><link rel="stylesheet" href="preview.css"></head><body class="usage-preview" data-preview="usage">
+<main class="surface with-rail" aria-label="Apply Vigil usage with demonstration history"><aside class="rail" aria-label="Preview navigation"><svg class="mark" aria-hidden="true" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="26" stroke="#818cf8" stroke-width="4"/><circle cx="32" cy="32" r="16" stroke="#4fc5b3" stroke-width="4"/><circle cx="32" cy="32" r="6" fill="#818cf8"/></svg><button class="" aria-label="Today preview" title="Today" data-preview-link="overview.html"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 3l9 7"/><path d="M5 9v12h14V9"/><path d="M9 21v-8h6v8"/></svg></button><button class="on" aria-label="Usage preview" title="Usage" data-preview-link="usage.html"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg></button><button class="" aria-label="Alerts preview" title="Alerts" data-preview-link="alerts.html"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><i class="dot"></i></button><span class="spacer"></span><button aria-label="About this preview" title="Demonstration data" data-about><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18"/><path d="M9.3 8.5a2.8 2.8 0 0 1 5.4.9c0 1.8-2.7 2.2-2.7 4"/><path d="M12 16.6v.1"/></svg></button><button aria-label="Notification sound preview" title="Sound preferences" data-preview-link="alerts.html?sounds=1"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8"/><path d="m9 3 1-2h4l1 2 2 1 2-.5 2.5 3.5-1 2v2l1 2-2.5 3.5-2-.5-2 1-1 2h-4l-1-2-2-1-2 .5L2.5 13l1-2V9l-1-2L5 3.5l2 .5z"/></svg></button></aside><div class="workspace"><header class="app-header"><span class="brand">Apply Vigil</span><span class="spacer"></span><span class="saved"><i></i>On this Mac</span><button class="icon-button" aria-label="Keep panel open" title="Keep panel open" aria-pressed="false" data-pin><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5-4 1-4 5v3l-2-2-6 6"/><path d="m11 3 10 10"/><path d="m11 3-1 4-4 4H3l10 10"/></svg></button><button class="icon-button" aria-label="Pop out compact view" title="Always-on-top floating view" data-preview-link="compact.html"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M21 3l-9 9"/><path d="M10 3H3v18h18v-7"/></svg></button></header>
+<div class="usage-scroll" role="region" aria-label="Usage preview. Scroll for UTC summaries, hourly activity, and recent entries." tabindex="0">
+  <div class="usage-heading"><h1>Usage</h1><p>Your applications over time</p></div>
+  <section class="usage-day-history" aria-label="Browse UTC history">
+    <div class="section-heading"><h2>Browse history</h2><div class="history-day-navigation" aria-label="Browse days">
+      <button class="history-step" data-day-step="-1" aria-label="Previous UTC day">‹</button>
+      <button class="text-button" data-day-today>Today</button>
+      <button class="history-step" data-day-step="1" aria-label="Next UTC day" disabled>›</button>
+    </div></div>
+    <div class="day-card">
+      <div class="day-card-top"><label class="history-date-picker"><span data-selected-date>Wednesday, October 14</span><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v16H4Z"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M4 10h16"/></svg><input type="date" data-day-picker min="2026-08-15" max="2026-10-14" value="2026-10-14" aria-label="Choose history date"></label><button data-day-edit><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m16 4 4 4"/><path d="M4 20l5-1L20 8a2.83 2.83 0 0 0-4-4L5 15l-1 5Z"/></svg>Edit counts</button></div>
+      <div class="day-card-bottom"><strong data-selected-total>38</strong> applications<span class="channels"><span class="easy-text"><b data-selected-easy>26</b> Easy Apply</span><span class="external-text"><b data-selected-external>12</b> External</span></span></div>
+    </div>
+    <p class="history-day-note" data-past-day-note hidden>Confirm past edits. Quick buttons log today.</p>
+  </section>
+  <section class="usage-chart" aria-label="Application history chart">
+    <div class="section-heading"><h2>Daily applications</h2><div class="segmented" role="group" aria-label="History range"><button class="on" data-range="7" aria-pressed="true">7 days</button><button data-range="15" aria-pressed="false">15 days</button><button data-range="30" aria-pressed="false">30 days</button></div></div>
+    <div class="legend"><span><i></i>Easy Apply</span><span><i class="external-dot"></i>External / form</span><span class="legend-hint">UTC days</span></div>
+    <div class="chart-wrap">
+      <div class="axis-y" aria-hidden="true"><span>75</span><span>50</span><span>25</span><span>0</span></div>
+      <div class="chart-plot" role="group" aria-label="Applications over 7 UTC days" data-chart-plot>
+<button class="chart-bar" data-chart-day="2026-10-08" data-easy="37" data-external="16" style="--easy-height:49.333333333333336%;--external-height:21.333333333333336%" aria-label="October 8: 53 applications. Open day history."><i class="external"></i><i class="easy"></i></button>
+<button class="chart-bar" data-chart-day="2026-10-09" data-easy="43" data-external="19" style="--easy-height:57.333333333333336%;--external-height:25.333333333333336%" aria-label="October 9: 62 applications. Open day history."><i class="external"></i><i class="easy"></i></button>
+<button class="chart-bar" data-chart-day="2026-10-10" data-easy="29" data-external="14" style="--easy-height:38.666666666666664%;--external-height:18.666666666666668%" aria-label="October 10: 43 applications. Open day history."><i class="external"></i><i class="easy"></i></button>
+<button class="chart-bar" data-chart-day="2026-10-11" data-easy="45" data-external="16" style="--easy-height:60.0%;--external-height:21.333333333333336%" aria-label="October 11: 61 applications. Open day history."><i class="external"></i><i class="easy"></i></button>
+<button class="chart-bar" data-chart-day="2026-10-12" data-easy="51" data-external="24" style="--easy-height:68.0%;--external-height:32.0%" aria-label="October 12: 75 applications. Open day history."><i class="external"></i><i class="easy"></i></button>
+<button class="chart-bar" data-chart-day="2026-10-13" data-easy="33" data-external="18" style="--easy-height:44.0%;--external-height:24.0%" aria-label="October 13: 51 applications. Open day history."><i class="external"></i><i class="easy"></i></button>
+<button class="chart-bar" data-chart-day="2026-10-14" data-easy="26" data-external="12" style="--easy-height:34.66666666666667%;--external-height:16.0%" aria-label="October 14: 38 applications. Open day history."><i class="external"></i><i class="easy"></i></button>
+
+      </div>
+      <div class="axis-x" aria-hidden="true"><span>Oct 8</span><span>Oct 10</span><span>Oct 12</span><span>Oct 14</span></div>
+      <div class="demo-tooltip" id="usage-chart-tooltip" role="tooltip"><strong data-tip-date>Fri, Oct 9, 2026 · UTC</strong><div class="tooltip-total"><span>Total</span><b data-tip-total>62</b></div><div><span class="easy-text">Easy Apply</span><b data-tip-easy>43</b></div><div><span class="external-text">External / form</span><b data-tip-external>19</b></div><div><span>Goal <span data-tip-goal>75</span></span><b data-tip-percentage>82.7%</b></div></div>
+    </div>
+    <p class="chart-range-summary" data-chart-summary><strong>383</strong> applications in this view · 7 UTC days</p>
+  </section>
+  <section class="usage-periods" aria-label="Application period summary">
+    <div class="section-heading"><h2>Applications · fixed UTC periods</h2></div>
+    <div class="period-table" role="table" aria-label="Applications in fixed UTC periods">
+      <div role="row" class="period-columns"><span role="columnheader">Period</span><span role="columnheader">Change</span><span role="columnheader">Applications</span><span role="columnheader">Breakdown</span></div>
+      <div role="rowgroup" data-period-rows></div>
+    </div>
+    <p class="period-pace" data-period-pace></p>
+  </section>
+  <section class="usage-stats" aria-label="Goal statistics">
+    <div><strong data-closed-average>57.5</strong><span>Closed-day average</span></div><div><strong data-goal-streak>0 days</strong><span>Goal streak</span></div>
+  </section>
+  <section class="usage-hourly" aria-label="Applications logged by UTC hour">
+    <div class="section-heading"><h2>Logged by hour <span data-hour-date>UTC · Oct 14</span></h2><button class="text-button" data-hour-today hidden>Back to today</button></div>
+    <div class="hour-bars" role="img" aria-label="Applications logged by UTC hour on October 14" data-hour-bars></div>
+    <div class="hour-axis" aria-hidden="true"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span></div>
+    <p class="hour-note" data-hour-note>When you logged, not when you submitted.</p>
+  </section>
+  <section class="recent" aria-label="Recent application entries">
+    <div class="section-heading"><h2 data-recent-title>Recent entries</h2><button class="small-button" data-usage-undo><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4 3 9l5 5"/><path d="M3 9h10a7 7 0 1 1 0 14"/></svg>Undo latest entry</button></div>
+    <div class="history-tools"><label>Show UTC day<input type="date" data-entry-filter min="2026-08-15" max="2026-10-14" aria-label="Filter entries by UTC date"></label><button class="text-button" data-all-entries hidden>All recent entries</button><span data-active-entry-count></span></div>
+    <div class="entry-list" data-entry-list></div>
+    <button class="load-more" data-more-entries>Load 10 more entries</button>
+  </section>
+  <footer class="preview-app-footer"><span>Apply Vigil · Personal application tracker</span><span>Demonstration data · UTC</span></footer>
+</div>
+</div><div class="demo-message" role="status"><div style="display:flex;align-items:center;gap:7px"><svg class="ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg><b data-message></b></div><span>Sample data</span></div><div class="demo-tip" role="status"></div><svg class="virtual-cursor" viewBox="0 0 20 24" aria-hidden="true"><path d="M2 1.5v17l4.6-4.3 3.1 7.3 3-1.3-3.1-7.1 6.3-.5L2 1.5Z" fill="white" stroke="#08090b" stroke-width="1.4" stroke-linejoin="round"/></svg></main>
+<script src="preview.js" defer></script></body></html>

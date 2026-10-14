@@ -2,8 +2,15 @@
 
 Apply Vigil is an independent menu bar application for the existing Vigil
 application tracker. It runs alongside the coding-agent app called Vigil.
-This first build connects to <https://vigil.dumpydon.workers.dev/> and is for its
-existing owner.
+Two separate flavors share the interface:
+
+- **Public local beta:** `dev.dumpydon.ApplyVigil.Local`, starts empty without an
+  account, stores records on the Mac, and never calls the owner API.
+- **Connected owner build:** `dev.dumpydon.ApplyVigil`, retains the existing
+  Cloudflare workspace, Keychain session and offline queue.
+
+Public downloads: <https://vigil.dumpydon.workers.dev/download/>. The connected
+owner installation stays separate and is not silently replaced by public builds.
 
 ## Use the installed app
 
@@ -13,7 +20,8 @@ Right-click it for the compact pop-out, Settings, pinning, the website, and Quit
 The dashboard is 425 × 600 points at an 85% interface scale, close to the Vigil
 reference app's proportions.
 
-Sign in with the web workspace's current owner password. This app has a separate
+The public beta needs no sign-in and labels saved data **On this Mac**.
+For the connected build, sign in with the web workspace's current owner password. This app has a separate
 session from Safari and Chrome. The server-issued session is retained in
 Keychain for its server-defined lifetime (up to 90 days); the app never retains
 the owner password. Password resets revoke older sessions.
@@ -25,7 +33,7 @@ the owner password. Password resets revoke older sessions.
 - **Alerts:** the existing quiet progress inbox, read/clear controls, and pause.
 - **Settings:** optional launch at login, pinning, menu count/percentage/icon,
   optional macOS banners, six sounds plus silence, JSON/CSV export, JSON restore,
-  owner session, and Quit.
+  owner session (connected build only), and Quit.
 
 The six sounds are Soft chime, macOS Glass, Bell, Ripple, Marimba, and Stardust.
 Choose Silent to turn sounds off. Preview sound uses the selected option; the
@@ -40,8 +48,8 @@ the installed app uses AppKit's
 Click the outward-arrow button beside the pin to open a separate **compact
 window**. It stays above other apps, can move and resize, remembers its position,
 and includes counts, quick/custom logging, undo, and an Open dashboard button.
-It shares the same cache, offline queue, owner session, and Cloudflare records
-as the menu panel. Closing either window does not discard retained operations;
+It shares the same records, cache, drafts and operation queue as the menu panel.
+The connected build also shares its owner session and Cloudflare records. Closing either window does not discard retained operations;
 closing the compact window leaves the menu bar app running.
 
 Pinning keeps the panel open when you use another app. Native file dialogs keep
@@ -58,8 +66,9 @@ you hear. There is no delivery while the app is quit or the Mac is asleep.
 
 All application days remain UTC (00:00 UTC / 05:30 IST). A dot after the menu
 count indicates a cached/pending state; **Saved** still requires a server
-acknowledgment. Separate browser and native offline queues converge through the
-same idempotent API, and conflicting changes still require review.
+acknowledgment in the connected build. The local beta commits through IndexedDB
+transactions and idempotency receipts; it works even with no network on first
+launch. Conflicting changes still require review in either mode.
 
 ## Build, test, install
 
@@ -90,11 +99,12 @@ second WebKit view verifies that the compact window shares the cache and that
 its offline operation survives closing the window and syncs exactly once.
 Its report is `output/macos/native-smoke-report.json`.
 
-GitHub runs web/shared lint, tests, and builds on branch pushes and pull requests.
-The separate Mac workflow is manual or triggered by `macos-v*` tags, so routine
-web edits do not consume hosted Mac-runner time. It compiles and verifies a clean
-bundle and uploads a ZIP preserving its executable permissions as a private CI
-artifact. Native GUI smoke checks remain a local release check.
+GitHub runs shared lint, tests and builds on branch pushes and pull requests.
+The separate Mac workflow runs for relevant native/shared changes, manual
+requests and `macos-v*` tags. It verifies the connected bundle and both public
+installer architectures. CI artifacts are public, like this repository; they
+contain code and generated assets only. GUI smoke checks remain local release
+checks. See [release procedure](releases.md) for DMG, ZIP and checksum generation.
 
 For an interactive browser preview with synthetic records:
 
@@ -117,13 +127,17 @@ npm run build
 ## Files and privacy
 
 - App: `/Applications/Apply Vigil.app`.
-- Bundle identity / preferences domain: `dev.dumpydon.ApplyVigil`.
+- Bundle identity / preferences domain: `dev.dumpydon.ApplyVigil` (connected),
+  `dev.dumpydon.ApplyVigil.Local` (public).
 - Keychain generic-password service: `dev.dumpydon.ApplyVigil.owner-session`.
 - WebKit cache: the system-managed data store for this bundle, typically under
   `~/Library/WebKit/dev.dumpydon.ApplyVigil/` and its application-support data.
 - Preferences and delivered-alert receipts: this app's UserDefaults domain.
 
-The app uses the existing Cloudflare service for application records. It adds no
+Only the connected build uses the existing Cloudflare service for records.
+The public build uses `apply-vigil-device-records-v1` and
+`apply-vigil-local-cache-v1` IndexedDB databases in its separate WebKit store,
+never creates a Keychain owner session, and blocks native API requests. It adds no
 telemetry, localhost listener, agent-account scanning, or new backend. Its bridge
 allows only the existing workspace API routes, rejects redirects, and keeps
 cookies out of JavaScript. Only the bundled local page can call it; remote
@@ -134,31 +148,11 @@ Launch at login if enabled, and move Apply Vigil.app to Trash. Cached data and
 the Keychain session are intentionally retained unless you explicitly remove
 them. Removing storage before syncing can lose pending records.
 
-## Public distribution later
+## Public distribution
 
-This build is locally ad-hoc signed, with no Apple Developer ID or notarization.
-Public distribution needs packaging for supported architectures, a signing and
-notarization decision, update/integrity verification, and a download page. It
-also needs a workspace/account setup: the current one-owner service is not a
-public multi-user backend. Do not publish this binary as a shared tracker until
-that data-isolation design is ready.
-
-See the [research and implementation plan](macos-plan.md) for reference links
-and scope.
-
-## Verification — 14 October 2026
-
-- Installed and launched the ad-hoc signed app on macOS 15.7.8, Apple Silicon.
-- Shared lint/build passed; all 111 automated tests passed.
-- The isolated native checks passed, including two WebKit views sharing a queue
-  and a compact-window write syncing exactly once after that window closed.
-- Verified the installed pop-out button opens the native floating panel and
-  Open dashboard returns to the menu panel, with the pop-out indicator active.
-- Verified owner sign-in against the existing production workspace and a valid
-  remembered session after replacing/relaunching the app. Production feature
-  checks read records; automated application writes used the isolated fake API.
-- Verified the installed signature and `LSUIElement=true`. The app bundle is
-  approximately 1 MB and runs with no development server.
-
-macOS banner permission and launch at login remain opt-in. Their system approval
-paths were not automatically enabled during verification.
+Run `npm run macos:package` for the versioned Apple Silicon and Intel DMGs, ZIPs,
+SHA-512 values and public release metadata. These public binaries use local-only
+mode and a separate bundle identity. They contain no owner data or credentials.
+The first beta is ad-hoc signed, with manual first-open approval and manual
+updates. See [release procedure](releases.md) for verification and compatibility
+limits, and the [download-page design](download-page.md) for public hosting.

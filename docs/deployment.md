@@ -1,8 +1,10 @@
-# Production deployment — 2026-10-08
+# Production deployment
 
 - Website: **https://vigil.dumpydon.workers.dev/**
+- Public Mac download page: **https://vigil.dumpydon.workers.dev/download/**
+- Mac releases: **https://github.com/dumpydon/vigil/releases**
 - Compact window: **https://vigil.dumpydon.workers.dev/compact**
-- Source: **https://github.com/dumpydon/vigil**, private, branch `main`.
+- Source: **https://github.com/dumpydon/vigil**, public, branch `main`.
 - Worker: `vigil`, Workers Free.
 - D1 database: `vigil`, D1 Free.
 - Database UUID: `63cb3890-e7d8-481c-9f35-0287e8394b5f`.
@@ -12,7 +14,7 @@ The frontend and Worker API are deployed together. The main DB binding targets t
 
 ## Automatic deployment
 
-Cloudflare Workers Builds connects the private `dumpydon/vigil` repository to the existing `vigil` Worker. Pushes to `main` build and deploy the frontend and API together.
+Cloudflare Workers Builds connects the public `dumpydon/vigil` repository to the existing `vigil` Worker. Pushes to `main` build and deploy the frontend and API together.
 
 - Build command: `npm run build`
 - Deploy command: `node scripts/check-deploy.mjs && npx wrangler deploy --env ""`
@@ -24,7 +26,7 @@ The sections below record the initial release; their initial empty-database tota
 
 ## Data preservation
 
-A complete version-1 JSON backup of the existing local entries, deletion history, goal policies, daily overrides, and tracking start was created outside Git, in the publishing machine's private `Vigil Backups` folder. Its permissions are owner read/write only. Local D1 and browser storage were retained.
+A complete version-1 JSON backup of the existing local entries, deletion history, goal policies, daily overrides, and tracking start was created outside Git, in the publishing machine's private backup folder. Its permissions are owner read/write only. Local D1 and browser storage were retained.
 
 The owner explicitly chose **“Keep production empty; preserve the backup.”** Consequently, no local entries, goals, or demonstration fixtures were imported. Production starts with zero entries and its baseline goal of 75. A transfer was not performed or implied.
 
@@ -34,7 +36,7 @@ For a future transfer, export a fresh local JSON backup; distinguish real record
 
 ## Production sign-in
 
-A unique production password and independent session secret were generated. The password remains in the publishing machine's private `Vigil Private/owner-password.txt` file, outside the repository; its value was not printed or committed. Cloudflare received only the salted password hash and session secret through encrypted Worker secret storage. Local development credentials were not reused.
+A unique production password and independent session secret were generated. The password remains in the publishing machine's private credential storage, outside the repository; its value was not printed or committed. Cloudflare received only the salted password hash and session secret through encrypted Worker secret storage. Local development credentials were not reused.
 
 Open the live website in Safari or Chrome and use the production owner password. There is no username or registration. The remembered session lasts up to 90 days. Store the password in your password manager. To intentionally change it later, run `npm run setup:owner` in an interactive terminal; this uses hidden prompts and also rotates the session secret, revoking old sessions.
 

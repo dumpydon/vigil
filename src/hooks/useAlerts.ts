@@ -3,7 +3,7 @@ import {alertsStore} from '../data/alerts'
 import {engine,type SyncStatus} from '../data/store'
 import type {Snapshot} from '../../shared/model'
 import {alertSnapshotNeedsRefresh} from '../utils/notifications'
-import {isNative} from '../desktop/bridge'
+import {isNative,isLocalOnly} from '../desktop/bridge'
 
 export default function useAlerts(snapshot:Snapshot|null,status:SyncStatus,enabled=true){
   const alerts=useSyncExternalStore(alertsStore.subscribe,alertsStore.getState)
@@ -14,7 +14,7 @@ export default function useAlerts(snapshot:Snapshot|null,status:SyncStatus,enabl
     const refresh=()=>{
       const currentTime=new Date(),current=engine.getState()
       setNow(currentTime);void alertsStore.refresh()
-      if((isNative||document.visibilityState==='visible')&&navigator.onLine&&current.status==='saved'&&current.snapshot&&alertSnapshotNeedsRefresh(current.snapshot,currentTime))void engine.sync()
+      if((isNative||document.visibilityState==='visible')&&(isLocalOnly||navigator.onLine)&&current.status==='saved'&&current.snapshot&&alertSnapshotNeedsRefresh(current.snapshot,currentTime))void engine.sync()
     },timer=setInterval(refresh,60_000)
     window.addEventListener('focus',refresh)
     document.addEventListener('visibilitychange',refresh)

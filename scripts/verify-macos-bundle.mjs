@@ -27,7 +27,7 @@ if(required.size)throw new Error(`Missing bundle files: ${[...required].join(', 
 const plist=key=>execFileSync('/usr/libexec/PlistBuddy',['-c',`Print :${key}`,path.join(app,'Contents/Info.plist')],{encoding:'utf8'}).trim()
 if(plist('LSUIElement')!=='true')throw new Error('The app must stay out of the Dock.')
 if(plist('CFBundleExecutable')!=='ApplyVigil')throw new Error('Unexpected native executable.')
-const architecture=process.arch==='arm64'?'arm64':'x86_64'
+const architecture=process.argv[3]??(process.arch==='arm64'?'arm64':'x86_64')
 const architectures=execFileSync('/usr/bin/lipo',['-archs',path.join(app,'Contents/MacOS/ApplyVigil')],{encoding:'utf8'}).trim().split(/\s+/)
 if(!architectures.includes(architecture))throw new Error('The native build does not support its target architecture.')
 for(const file of files.filter(file=>file.endsWith('.wav'))){

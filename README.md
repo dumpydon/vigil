@@ -1,8 +1,8 @@
 # Vigil
 
-A personal job-application tracker for LinkedIn Easy Apply and external forms. Log what you have completed, follow your daily goal, and review your history.
+A job-application tracker for LinkedIn Easy Apply and external forms. Log what you have completed, follow your daily goal, and review your history.
 
-**[Open Vigil](https://vigil.dumpydon.workers.dev/)** · **[Compact view](https://vigil.dumpydon.workers.dev/compact)**
+**[Download Apply Vigil for Mac](https://vigil.dumpydon.workers.dev/download/)** · **[Mac releases](https://github.com/dumpydon/vigil/releases)** · **[Owner web workspace](https://vigil.dumpydon.workers.dev/)**
 
 <img src="docs/images/compact.jpg" alt="Vigil compact view with demonstration data" width="400">
 
@@ -31,28 +31,40 @@ A personal job-application tracker for LinkedIn Easy Apply and external forms. L
 - Keep logging offline after your first sign-in and load; sync when connected.
 - Export a JSON backup or CSV, and merge a backup without duplicating records.
 
-Vigil is for one owner. Counts are entered manually; it does not submit applications.
+The public Mac app works locally without an account. The web workspace is for its existing owner. Counts are entered manually; Vigil does not submit applications.
 
 The sidebar bell shows daily overviews, halfway progress, goal completions, streak milestones, comeback messages, best-day records, total-application milestones, evening check-ins, and Monday recaps. Alerts appear while Vigil is open and stay in the existing device cache. Read or clear them from the inbox, or pause them for the current UTC day.
 
 ## Mac menu bar app
 
-**Apply Vigil** is a local macOS companion with no Dock icon. It reuses the same
-Cloudflare workspace and offline sync engine, with menu bar progress, a pinnable
-panel, a floating compact window, native backup dialogs, optional notifications,
-and quiet sounds.
+**Apply Vigil** lives in your menu bar with no Dock icon. The public beta starts
+with your own empty, local workspace: no account or internet connection needed.
+It includes a pinnable glass panel, floating compact window, daily goals, history,
+quiet alerts, six sounds plus silence, optional macOS banners and launch at login,
+and JSON/CSV backups with JSON restore.
+
+Download the **Apple Silicon** or **Intel** DMG from the download page, drag the
+app to Applications, and follow the first-open guide if macOS requests approval.
+The beta is ad-hoc signed and not notarized. macOS 13+ is required. The Intel
+bundle is compiled and verified; physical Intel runtime testing is still pending.
+
+The connected owner build remains a separate flavor. Developers can build both:
 
 ```sh
-npm run macos:build
+npm run macos:build                   # Existing connected owner app
+npm run macos:build -- --local        # Public local-only app
 npm run macos:test
-npm run macos:install
+npm run macos:test -- --local
+npm run macos:package                 # Both public DMGs + ZIPs + checksums
 ```
 
-Requires macOS 13+, Command Line Tools, and Node 22.14+. Sign in once using the
-existing workspace's owner password. This first build is for the existing owner;
-public downloads and multi-user setup are future work.
+Native builds require macOS, Command Line Tools and Node 22.14+. Packaging also
+requires Python 3.10+. No paid backend, separate database or Apple membership is
+needed for this beta. Cloud sync and automatic updates are future features.
 
-[Mac app guide](docs/macos.md) · [Plan and reference research](docs/macos-plan.md)
+[Mac app guide](docs/macos.md) · [Release procedure](docs/releases.md) ·
+[Repository and distribution](docs/github-distribution-plan.md) ·
+[Download-page design](docs/download-page.md)
 
 ## Floating compact view
 
@@ -97,4 +109,4 @@ This installation uses Cloudflare Free. Pushes to GitHub **main** automatically 
 
 All days use UTC, starting at **00:00 UTC / 05:30 IST**. The default goal is 75. **Saved** means the server has acknowledged your changes. Keep regular JSON backups; clearing browser storage can erase unsynced work.
 
-The visual style is inspired by Vigilbar. Vigil is an independent personal tracker with custom SVG assets and system fonts.
+The visual style and download-page interactions follow [Vigilbar](https://www.vigilbar.com/), with creator permission reported by the project owner. Apply Vigil is an independent application tracker with its own product media, original chimes and system fonts.

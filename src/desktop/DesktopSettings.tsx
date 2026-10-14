@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react'
-import {desktopCall,isDesktopPreview,type DesktopSettings as Preferences} from './bridge'
+import {desktopCall,isDesktopPreview,isLocalOnly,type DesktopSettings as Preferences} from './bridge'
 import {SOUND_OPTIONS} from './sounds'
 
 export default function DesktopSettings(){
@@ -22,8 +22,8 @@ export default function DesktopSettings(){
       <label className="preference-row"><span>macOS notifications<small>Uses your existing quiet alert policy.</small></span><input type="checkbox" checked={settings.notifications} disabled={busy} onChange={e=>{void change('notifications',e.target.checked)}}/></label>
       {settings.notificationStatus==='denied'&&<p className="fine-print">Banners are disabled in System Settings → Notifications → Apply Vigil. Your in-app inbox still works.</p>}
       <label className="preference-row"><span>Alert sound</span><select value={settings.sound} disabled={busy} onChange={e=>{void change('sound',e.target.value)}}>{SOUND_OPTIONS.map(sound=><option key={sound.value} value={sound.value}>{sound.label}</option>)}</select></label>
-      <div className="settings-actions"><button disabled={settings.sound==='none'} onClick={()=>{if(!isDesktopPreview)void desktopCall('previewSound').catch(e=>setError(e.message))}}>Preview sound</button><button onClick={()=>{if(!isDesktopPreview)void desktopCall('openWebsite')}}>Open web dashboard ↗</button></div>
-      <p className="fine-print">Alerts and sync run while Apply Vigil is open. Sounds follow your Mac’s output volume; Focus can silence banners.</p>
+      <div className="settings-actions"><button disabled={settings.sound==='none'} onClick={()=>{if(!isDesktopPreview)void desktopCall('previewSound').catch(e=>setError(e.message))}}>Preview sound</button><button onClick={()=>{if(!isDesktopPreview)void desktopCall('openWebsite')}}>{isLocalOnly?'Visit Apply Vigil ↗':'Open web dashboard ↗'}</button></div>
+      <p className="fine-print">{isLocalOnly?'Alerts run':'Alerts and sync run'} while Apply Vigil is open. Sounds follow your Mac’s output volume; Focus can silence banners.</p>
       <div className="desktop-version"><span>Apply Vigil {settings.version}</span><button className="text-button" onClick={()=>{if(!isDesktopPreview)void desktopCall('quit')}}>Quit Apply Vigil</button></div>
     </>:<p>Loading Mac preferences…</p>}
     {isDesktopPreview&&<p className="fine-print">Preview preferences stay in this demo.</p>}{error&&<p className="form-error" role="alert">{error}</p>}

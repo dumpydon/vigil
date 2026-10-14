@@ -92,3 +92,24 @@ Floating-window lifecycle now lives in a hook, with a guard for requests resolvi
 Minimal verification: one production build, focused ESLint, and seven tests covering the PiP API and PWA listener lifecycle passed. A single demo-browser pass checked the desktop layout, narrow compact layout without horizontal overflow, and goal cancellation. No full API suite or deployment checks were run.
 
 README screenshots use an isolated in-memory fixture and a fixed demonstration clock. No personal entries or credentials appear in them, and the fixture never opens IndexedDB or sends API requests. The committed images are in docs/images.
+
+
+## Public Mac beta and download site — 14 October 2026
+
+The public app uses a separate local-only bundle identity and device store. Its
+real native smoke check passes with zero API requests: no account on first launch,
+durable writes/drafts across reload, shared records in two native windows, and
+retained compact-window writes. The connected owner native smoke check also
+passes against its isolated fake API.
+
+Both ARM and Intel installers are built, ad-hoc signed and verified after
+read-only mounting. ZIPs are extracted and their signatures, exact bundle file
+list, architecture and executable permissions verified. Release SHA-512 values
+are generated from the final binary files. Physical Intel and clean macOS 13
+runtime testing remain beta compatibility limits.
+
+Download-page browser checks cover desktop/narrow sizing, scrollable Usage media,
+fixed preview chrome, range/day details, architecture menus, FAQ, tour playback,
+modal dismissal and first-open guidance. The tracker service worker excludes
+public download routes; the static CSP permits only same-origin demo frames.
+Shared automated checks and production build must pass before publication.

@@ -15,13 +15,15 @@ interface NativeBridge {
 }
 declare global {
   interface Window {
-    __APPLY_VIGIL_NATIVE__?:{version:string;testing?:boolean;surface?:'dashboard'|'compact'}
+    __APPLY_VIGIL_NATIVE__?:{version:string;testing?:boolean;surface?:'dashboard'|'compact';localOnly?:boolean}
     webkit?:{messageHandlers?:{applyVigil?:NativeBridge}}
   }
 }
 export const isNative=typeof window!=='undefined'&&!!window.__APPLY_VIGIL_NATIVE__
 export const isDesktopPreview=typeof window!=='undefined'&&import.meta.env.DEV&&new URLSearchParams(location.search).has('desktop-preview')
 export const isDesktop=isNative||isDesktopPreview
+export const isLocalOnly=isNative&&window.__APPLY_VIGIL_NATIVE__?.localOnly===true
+export const desktopVersion=isNative?window.__APPLY_VIGIL_NATIVE__!.version:'1.0.0'
 export const isCompactSurface=(isNative&&window.__APPLY_VIGIL_NATIVE__?.surface==='compact')||(isDesktopPreview&&new URLSearchParams(location.search).has('compact-preview'))
 export const markSource=isNative?'./mark.svg':'/mark.svg'
 

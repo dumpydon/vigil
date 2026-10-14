@@ -113,7 +113,8 @@ export function createHandler(clock:()=>Date=()=>new Date()){
         const asset=await env.ASSETS.fetch(request)
         const headers=new Headers(asset.headers)
         headers.set('X-Content-Type-Options','nosniff');headers.set('Referrer-Policy','same-origin')
-        headers.set('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'")
+        const ancestors=url.pathname.startsWith('/download/')?"'self'":"'none'"
+        headers.set('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors ${ancestors}; form-action 'self'`)
         if(url.pathname==='/sw.js')headers.set('Cache-Control','no-cache')
         return new Response(asset.body,{status:asset.status,headers})
       }

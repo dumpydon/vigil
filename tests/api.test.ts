@@ -5,6 +5,14 @@ let test:Awaited<ReturnType<typeof makeEnvironment>>
 beforeEach(async()=>{test=await makeEnvironment()},30_000)
 afterEach(async()=>{await test?.dispose()})
 describe('owner API and actual local D1 persistence',()=>{
+  it('allows public demos in same-origin frames while keeping the owner tracker unframeable',async()=>{
+    const tracker=await test.fetcher('/'),demo=await test.fetcher('/download/previews/usage.html')
+    expect(tracker.status).toBe(200);expect(demo.status).toBe(200)
+    expect(tracker.headers.get('content-security-policy')).toContain("frame-ancestors 'none'")
+    expect(demo.headers.get('content-security-policy')).toContain("frame-ancestors 'self'")
+    expect(demo.headers.get('content-security-policy')).toContain("script-src 'self'")
+    expect((await test.fetcher('/api/snapshot')).status).toBe(401)
+  })
   it('denies every private endpoint without authentication and rejects cross-origin mutations',async()=>{
     for(const url of ['/api/snapshot','/api/dashboard','/api/entries','/api/goals','/api/export','/api/session'])expect((await test.fetcher(url)).status).toBe(401)
     expect((await test.mutate(test.op())).status).toBe(401)

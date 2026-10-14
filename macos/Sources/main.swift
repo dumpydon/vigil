@@ -51,12 +51,14 @@ private enum AlertSound: String, CaseIterable {
     private var smokeFixture: [String: Any]?
     private var smokeOnline = true
     private var smokeApplied = Set<String>()
+    private var apiRequests = 0
+    private var localOnly: Bool { Bundle.main.object(forInfoDictionaryKey: "ApplyVigilLocalOnly") as? Bool ?? false }
     private var pinned: Bool {
         get { preferences.bool(forKey: "pinned") }
         set { preferences.set(newValue, forKey: "pinned"); popover.behavior = newValue ? .applicationDefined : .transient; dispatch("pinned", newValue) }
     }
     private var resourceRoot: URL { Bundle.main.resourceURL!.appendingPathComponent("web", isDirectory: true) }
-    private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0" }
+    private var version: String { Bundle.main.object(forInfoDictionaryKey: "ApplyVigilDisplayVersion") as? String ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0" }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -121,7 +123,7 @@ private enum AlertSound: String, CaseIterable {
         configuration.websiteDataStore = websiteDataStore
         configuration.processPool = processPool
         configuration.userContentController.addScriptMessageHandler(self, contentWorld: .page, name: "applyVigil")
-        configuration.userContentController.addUserScript(WKUserScript(source: "window.__APPLY_VIGIL_NATIVE__ = {version: '\(version)', testing: \(smokeTest), surface: '\(compact ? "compact" : "dashboard")'};", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        configuration.userContentController.addUserScript(WKUserScript(source: "window.__APPLY_VIGIL_NATIVE__ = {version: '\(version)', testing: \(smokeTest), localOnly: \(localOnly), surface: '\(compact ? "compact" : "dashboard")'};", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         let view = WKWebView(frame: NSRect(x: 0, y: 0, width: compact ? 340 : 425, height: compact ? 430 : 600), configuration: configuration)
         view.pageZoom = 0.85; view.navigationDelegate = self; view.uiDelegate = self; view.underPageBackgroundColor = .clear; view.setValue(false, forKey: "drawsBackground")
         return view
@@ -168,13 +170,13 @@ private enum AlertSound: String, CaseIterable {
     func popoverShouldClose(_ popover: NSPopover) -> Bool { !fileDialogOpen }
     @objc private func openPanel() { showPanel() }
     @objc private func openSettings() { showPanel(page: "settings") }
-    @objc private func openWebsite() { NSWorkspace.shared.open(APIBoundary.origin) }
+    @objc private func openWebsite() { NSWorkspace.shared.open(localOnly ? APIBoundary.origin.appendingPathComponent("download") : APIBoundary.origin) }
     @objc private func togglePin() { pinned.toggle() }
     @objc private func didWake() { refresh() }
     private func refresh() { if webReady { dispatch("refresh", NSNull()) } }
     private func showContextMenu() {
         let menu = NSMenu()
-        let items: [(String, Selector)] = [("Open Apply Vigil", #selector(openPanel)), ("Pop out compact view", #selector(openCompact)), (pinned ? "Unpin panel" : "Keep panel open", #selector(togglePin)), ("Settings…", #selector(openSettings)), ("Open web dashboard", #selector(openWebsite))]
+        let items: [(String, Selector)] = [("Open Apply Vigil", #selector(openPanel)), ("Pop out compact view", #selector(openCompact)), (pinned ? "Unpin panel" : "Keep panel open", #selector(togglePin)), ("Settings…", #selector(openSettings)), (localOnly ? "Visit Apply Vigil" : "Open web dashboard", #selector(openWebsite))]
         for (title, action) in items { menu.addItem(withTitle: title, action: action, keyEquivalent: "").target = self }
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit Apply Vigil", action: #selector(quit), keyEquivalent: "q").target = self
@@ -182,8 +184,8 @@ private enum AlertSound: String, CaseIterable {
     }
     @objc private func quit() {
         if pending > 0 {
-            let alert = NSAlert(); alert.messageText = "\(pending) changes are waiting to sync"; alert.informativeText = "They are retained on this Mac and will sync when you reopen Apply Vigil."
-            alert.addButton(withTitle: "Keep syncing"); alert.addButton(withTitle: "Quit with changes retained")
+            let alert = NSAlert(); alert.messageText = "\(pending) changes are waiting to \(localOnly ? "save" : "sync")"; alert.informativeText = "They are retained on this Mac and will \(localOnly ? "save" : "sync") when you reopen Apply Vigil."
+            alert.addButton(withTitle: localOnly ? "Keep saving" : "Keep syncing"); alert.addButton(withTitle: "Quit with changes retained")
             if alert.runModal() != .alertSecondButtonReturn { return }
         }
         NSApp.terminate(nil)
@@ -248,6 +250,8 @@ private enum AlertSound: String, CaseIterable {
     private func handle(_ command: String, data: [String: Any]) async throws -> Any {
         switch command {
         case "request":
+            guard !localOnly else { throw DesktopError.message("This local app does not connect to an owner account.") }
+            apiRequests += 1
             guard let path = data["path"] as? String, let method = data["method"] as? String else { throw DesktopError.message("Incomplete API request.") }
             if smokeTest { return try mockRequest(path: path, method: method, body: data["body"] as? String) }
             return try await api.request(path: path, method: method, body: data["body"] as? String)
@@ -272,14 +276,14 @@ private enum AlertSound: String, CaseIterable {
         let today = ISO8601DateFormatter().string(from: Date()).prefix(10)
         let total = data["total"] as? Int, goal = data["goal"] as? Int
         let mode = preferences.string(forKey: "menuDisplay") ?? "count"
-        let stale = day != today || status != "saved"
+        let stale = day != today || !["saved", "local"].contains(status)
         if let total, let goal, goal > 0, day == today {
             switch mode {
             case "icon": button.title = ""
             case "percent": button.title = " \(Int((Double(total) / Double(goal) * 100).rounded()))%\(stale ? " ·" : "")"
             default: button.title = " \(total)/\(goal)\(stale ? " ·" : "")"
             }
-            button.toolTip = "Apply Vigil · \(total) of \(goal) today (UTC) · \(status)\(pending > 0 ? " · \(pending) pending" : "")"
+            button.toolTip = "Apply Vigil · \(total) of \(goal) today (UTC) · \(status == "local" ? "On this Mac" : status)\(pending > 0 ? " · \(pending) pending" : "")"
         } else { button.title = mode == "icon" ? "" : " Apply"; button.toolTip = "Apply Vigil · \(status == "auth" ? "Sign in to sync" : "Loading workspace")" }
         button.setAccessibilityLabel(button.toolTip)
     }
@@ -365,7 +369,7 @@ private enum AlertSound: String, CaseIterable {
     }
 
     // Native smoke checks are implemented separately and never contact production.
-    private func startSmokeTest() { runSmokeChecks() }
+    private func startSmokeTest() { if localOnly { runLocalSmokeChecks() } else { runSmokeChecks() } }
     private func mockRequest(path: String, method: String, body: String?) throws -> [String: Any] { try smokeRequest(path: path, method: method, body: body) }
 
     private func smokeRequest(path: String, method: String, body: String?) throws -> [String: Any] {
@@ -447,6 +451,39 @@ private enum AlertSound: String, CaseIterable {
             } catch {
                 try? writeSmokeReport(["passed": false, "error": error.localizedDescription])
                 fputs("Apply Vigil native smoke test failed: \(error.localizedDescription)\n", stderr)
+                exit(1)
+            }
+        }
+    }
+    private func runLocalSmokeChecks() {
+        Task { @MainActor in
+            do {
+                try await waitForTestState("window.__applyVigilTest?.state().status === 'saved'")
+                guard (try await evaluate("document.body.textContent.includes('Owner password')")) as? Bool == false else { throw DesktopError.message("Local mode unexpectedly asks for an owner password") }
+                _ = try await evaluate("window.__applyVigilTest.log(3,2)")
+                _ = try await evaluate("window.__applyVigilTest.draft({kind:'local-test',value:'retained'})")
+                try await waitForTestState("window.__applyVigilTest.state().queue.length === 0 && window.__applyVigilTest.state().status === 'saved'")
+                webReady = false; webView.reload()
+                try await waitForTestState("window.__applyVigilTest?.state().status === 'saved' && window.__applyVigilTest.state().draft?.value === 'retained' && window.__applyVigilTest.state().snapshot.entries.reduce((n,e)=>n+e.easy+e.external,0) === 5")
+                openCompact()
+                guard let compact = compactWebView else { throw DesktopError.message("Compact local window was not created") }
+                var ready = false
+                for _ in 0..<100 {
+                    if (try? await evaluate("window.__applyVigilTest?.state().status === 'saved'", in: compact)) as? Bool == true { ready = true; break }
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                }
+                guard ready else { throw DesktopError.message("Compact local window did not initialize") }
+                _ = try await evaluate("window.__applyVigilTest.log(1,1)", in: compact)
+                compactPanel?.close(); refresh()
+                try await waitForTestState("window.__applyVigilTest.state().status === 'saved' && window.__applyVigilTest.state().queue.length === 0 && window.__applyVigilTest.state().snapshot.entries.reduce((n,e)=>n+e.easy+e.external,0) === 7")
+                let blocked = try await evaluate("window.webkit.messageHandlers.applyVigil.postMessage({command:'request',path:'/api/snapshot',method:'GET'}).then(()=>false,()=>true)")
+                guard blocked as? Bool == true, apiRequests == 0, NSApp.activationPolicy() == .accessory else { throw DesktopError.message("Local-only network or Dock boundary failed") }
+                try writeSmokeReport(["passed": true, "mode": "local", "total": 7, "apiRequests": apiRequests, "checks": ["first launch without account", "durable local records and drafts", "reload restores local data", "two native windows share local data", "closing compact window preserves local writes", "native owner API is blocked", "no network requests or Dock icon"]])
+                print("Apply Vigil local-only native checks passed.")
+                NSApp.terminate(nil)
+            } catch {
+                try? writeSmokeReport(["passed": false, "error": error.localizedDescription])
+                fputs("Apply Vigil local-only check failed: \(error.localizedDescription)\n", stderr)
                 exit(1)
             }
         }

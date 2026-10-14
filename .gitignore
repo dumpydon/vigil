@@ -45,3 +45,4 @@ tmp/
 *.pfx
 *.mobileprovision
 *.provisionprofile
+site/download/assets/sounds/
