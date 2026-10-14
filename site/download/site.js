@@ -1,4 +1,5 @@
 /* Apply Vigil landing interactions. No analytics, account access, or app data. */
+import {createReplayLoop,pageReplayBudget} from './replay-loop.js'
 (() => {
   'use strict'
   const one=(selector,root=document)=>root.querySelector(selector)
@@ -107,6 +108,13 @@
 
   const stage=one('#herostage'),cursor=one('#hcur'),pop=one('#hpop'),compact=one('#hifr'),notice=one('.hero-notification')
   let timers=[]
+  const heroLoop=createReplayLoop({budget:pageReplayBudget(window,'hero'),replay:heroRun,onChange:()=>{
+    if(stage){stage.dataset.playCount=String(heroLoop.plays);stage.dataset.replayWaiting=String(heroLoop.waiting)}
+  }})
+  function heroAvailability(){heroLoop.setEnabled(!document.hidden&&!reduced.matches)}
+  document.addEventListener('visibilitychange',heroAvailability)
+  reduced.addEventListener('change',heroAvailability)
+  heroAvailability()
   function send(action,extra={}){for(const frame of [pop,compact])frame?.contentWindow?.postMessage({applyVigilPreview:{action,...extra}},location.origin)}
   function fitHero(){if(!stage)return;stage.style.setProperty('--tower-scale',Math.min(.66,(stage.clientHeight-58)/636,(stage.clientWidth-32)/460));compact.style.setProperty('--compact-scale',Math.min(1.1,(stage.clientWidth-20)/460))}
   function point(x,y){cursor.style.left=`${x}px`;cursor.style.top=`${y}px`}
@@ -115,6 +123,7 @@
   function later(delay,fn){timers.push(setTimeout(fn,delay))}
   function heroRun(){
     if(!stage)return
+    heroLoop.begin()
     timers.forEach(clearTimeout);timers=[];stage.classList.remove('tower','settled');stage.classList.add('live');notice.classList.remove('on');cursor.classList.remove('on','click');send('reset');one('#hero-count').textContent='38 / 75';fitHero()
     if(reduced.matches){stage.classList.add('tower','settled');return}
     later(300,()=>{point(stage.clientWidth*.72,stage.clientHeight*.72);cursor.classList.add('on')})
@@ -126,10 +135,17 @@
     later(16200,()=>notice.classList.add('on'));later(20400,()=>{click();send('add',{category:'easy',amount:3});one('#hero-count').textContent='49 / 75'})
     later(22400,()=>{send('add',{category:'external',amount:1});one('#hero-count').textContent='50 / 75'})
     later(24100,()=>point(...trayPoint()));later(25250,click);later(25400,()=>stage.classList.add('tower'));later(26900,()=>notice.classList.remove('on'))
-    later(30200,()=>cursor.classList.remove('on'));later(31000,()=>stage.classList.add('settled'))
+    later(30200,()=>cursor.classList.remove('on'));later(31000,()=>{stage.classList.add('settled');if(!reduced.matches)heroLoop.finish()})
   }
   one('#heroreplay')?.addEventListener('click',heroRun)
-  if(stage){pop.addEventListener('load',()=>{fitHero();heroRun()},{once:true});if(pop.contentDocument?.readyState==='complete')heroRun();fitHero()}
+  if(stage){
+    let started=false
+    const initialHero=()=>{
+      if(started||pop.contentDocument?.body?.dataset.preview!=='overview'||compact.contentDocument?.body?.dataset.preview!=='compact'||pop.contentDocument.readyState!=='complete'||compact.contentDocument.readyState!=='complete')return
+      started=true;pop.removeEventListener('load',initialHero);compact.removeEventListener('load',initialHero);fitHero();heroRun()
+    }
+    pop.addEventListener('load',initialHero);compact.addEventListener('load',initialHero);initialHero();fitHero()
+  }
 
   function paintWallpaper(){
     const canvas=one('#hwall');if(!canvas)return

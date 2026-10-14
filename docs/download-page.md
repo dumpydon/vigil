@@ -16,7 +16,12 @@ included.
 All preview records are synthetic. Media are interactive HTML at fixed design
 sizes, scaled to available space. Usage content scrolls inside a fixed glass
 shell, header and rail, with OS-native scrollbars and a focusable region. The
-31-second hero is a one-shot story with replay; the 30-second tour has playback,
+31-second hero and 15-second first-launch guide each play automatically up to
+five times, holding their final frame for five seconds between plays. Their
+in-memory allowances reset with the top-level page refresh; reopening a guide
+iframe does not renew them. Manual replay remains available after the automatic
+limit. Pausing or selecting a step cancels a pending replay, and hidden pages
+do not consume the replay delay. The 30-second tour has playback,
 scene selection and replay. Five six-second chapters share one elapsed-time clock;
 preloaded previews follow that clock for logging, window movement, chart details,
 scrolling and alerts. Pausing freezes the demonstrations, and replay resets them. Sound samples play only after an explicit click.
