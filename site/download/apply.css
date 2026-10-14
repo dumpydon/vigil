@@ -4,6 +4,7 @@ button{font-family:inherit}button:focus-visible,a:focus-visible,summary:focus-vi
 .stage.wtstage{width:100%;min-width:0}
 .srow2{width:100%;border:0;color:var(--tx);font-family:inherit;text-align:left}
 .srow2 .trg{font-family:inherit}.srow2.playing .tri{border-left-color:var(--ok)}
+.achtoast .at-ic{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;line-height:1}
 .channel-easy{font:800 28px/1 -apple-system,BlinkMacSystemFont,sans-serif;color:#818cf8}.channel-external{font-size:29px;color:#4fc5b3}
 .media-note{font-size:11px;color:var(--mut);margin-top:18px}.attention-stage{margin-top:44px!important}
 .hero-notification{position:absolute;right:20px;top:70px;z-index:9;display:flex;align-items:flex-start;gap:9px;width:245px;padding:12px 15px;border-radius:15px;background:rgba(29,31,36,.85);border:1px solid #ffffff26;backdrop-filter:blur(20px);box-shadow:0 16px 50px #0006;opacity:0;transform:translateX(18px);transition:opacity .4s,transform .55s cubic-bezier(.2,.9,.25,1.15);text-align:left}
