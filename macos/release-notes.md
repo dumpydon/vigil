@@ -8,7 +8,7 @@ Apply Vigil is a free Mac menu bar app for keeping track of job applications, da
 - Quiet progress alerts, six sounds plus silence, and optional macOS banners and launch at login.
 - JSON/CSV backups and JSON restore. No activity upload, browser monitoring or automatic job applications.
 
-[Download page and product tour](https://vigil.dumpydon.workers.dev/download/) · [Installation guide](https://vigil.dumpydon.workers.dev/download/install) · [Privacy](https://vigil.dumpydon.workers.dev/download/privacy)
+[Download page and product tour](https://vigil.dumpydon.workers.dev/) · [Installation guide](https://vigil.dumpydon.workers.dev/install/) · [Privacy](https://vigil.dumpydon.workers.dev/privacy/)
 
 ## Download and first open
 

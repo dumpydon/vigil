@@ -9,14 +9,14 @@ Two separate flavors share the interface:
 - **Connected owner build:** `dev.dumpydon.ApplyVigil`, retains the existing
   Cloudflare workspace, Keychain session and offline queue.
 
-Public downloads: <https://vigil.dumpydon.workers.dev/download/>. The connected
+Public downloads: <https://vigil.dumpydon.workers.dev/>. The connected
 owner installation stays separate and is not silently replaced by public builds.
 
 ## Approve a downloaded beta’s first launch
 
 The public beta is ad-hoc signed and not notarized by Apple. Its
-[15-second illustrated walkthrough](https://vigil.dumpydon.workers.dev/download/first-launch.html)
-and [written install guide](https://vigil.dumpydon.workers.dev/download/install.html)
+[15-second illustrated walkthrough](https://vigil.dumpydon.workers.dev/first-launch/)
+and [written install guide](https://vigil.dumpydon.workers.dev/install/)
 show the download, Applications folder, first-open warning, and app approval.
 
 For an unverified-app or unidentified-developer warning, keep the app in
@@ -130,7 +130,7 @@ For an interactive browser preview with synthetic records:
 npm run dev
 ```
 
-Open <http://127.0.0.1:5173/?desktop-preview=1>. This uses a separate IndexedDB
+Open <http://127.0.0.1:5173/dashboard/?desktop-preview=1>. This uses a separate IndexedDB
 workspace and a fake API, with no production requests. The preview does not play native sounds or change
 Mac login/notification settings.
 

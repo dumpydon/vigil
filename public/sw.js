@@ -8,9 +8,9 @@ self.addEventListener('activate', event => event.waitUntil((async () => {
 })()));
 self.addEventListener('fetch', event => {
   const request = event.request, url = new URL(request.url);
-  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/') || url.pathname === '/download' || url.pathname.startsWith('/download/')) return;
+  if (request.method !== 'GET' || url.origin !== self.location.origin || (!url.pathname.startsWith('/dashboard/') && !SHELL.includes(url.pathname))) return;
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(async () => (await caches.open(CACHE)).match('/index.html')));
+    event.respondWith(fetch(request).catch(async () => (await caches.open(CACHE)).match('/dashboard/')));
     return;
   }
   if (SHELL.includes(url.pathname)) event.respondWith((async () => {

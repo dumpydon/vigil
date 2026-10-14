@@ -4,15 +4,15 @@
 <h1 align="center">Vigil</h1>
 <p align="center">Track completed job applications. Follow your daily goal. See your progress.</p>
 
-<h3 align="center"><a href="https://vigil.dumpydon.workers.dev/download/">↓ Download Apply Vigil for Mac</a></h3>
+<h3 align="center"><a href="https://vigil.dumpydon.workers.dev/">↓ Download Apply Vigil for Mac</a></h3>
 <p align="center">
-  <a href="https://vigil.dumpydon.workers.dev/">Web app · owner workspace</a> &nbsp;·&nbsp;
-  <a href="https://vigil.dumpydon.workers.dev/download/install.html">Install guide</a> &nbsp;·&nbsp;
+  <a href="https://vigil.dumpydon.workers.dev/dashboard/">Web app · owner workspace</a> &nbsp;·&nbsp;
+  <a href="https://vigil.dumpydon.workers.dev/install/">Install guide</a> &nbsp;·&nbsp;
   <a href="https://github.com/dumpydon/vigil/releases">Releases &amp; checksums</a>
 </p>
 <p align="center"><sub>Free beta · macOS 13+ · Apple Silicon &amp; Intel</sub></p>
 
-<a href="https://vigil.dumpydon.workers.dev/download/">
+<a href="https://vigil.dumpydon.workers.dev/">
   <img src="docs/images/apply-vigil-demo.gif" alt="Apply Vigil in action: menu bar, floating window, application counts, and progress alerts" width="1280">
 </a>
 <p align="center"><sub>Animated product preview · demonstration data</sub></p>
@@ -35,12 +35,12 @@ Log LinkedIn Easy Apply and external/form applications separately. Counts are en
 
 ## First launch on macOS
 
-The beta is ad-hoc signed and **not notarized by Apple**. If macOS blocks the first open, follow the [15-second illustrated guide](https://vigil.dumpydon.workers.dev/download/first-launch.html).
+The beta is ad-hoc signed and **not notarized by Apple**. If macOS blocks the first open, follow the [15-second illustrated guide](https://vigil.dumpydon.workers.dev/first-launch/).
 
 <details>
 <summary>Watch the installation walkthrough</summary>
 
-<a href="https://vigil.dumpydon.workers.dev/download/first-launch.html">
+<a href="https://vigil.dumpydon.workers.dev/first-launch/">
   <img src="docs/images/first-launch.gif" alt="Illustrated installation: Applications folder, unverified-app warning, Privacy & Security, Open Anyway, and the menu bar" width="960">
 </a>
 
@@ -67,7 +67,7 @@ npm run setup:local
 npm run db:migrate:local
 ```
 
-Run `npm run dev:api` and `npm run dev` in separate terminals, then open [localhost:5173](http://127.0.0.1:5173/).
+Run `npm run dev:api` and `npm run dev` in separate terminals, then open the [dashboard](http://127.0.0.1:5173/dashboard/). The [public website](http://127.0.0.1:5173/) uses the same server.
 
 For the public Mac app, use `npm ci` and `npm run macos:build -- --local` on macOS. See the [native build requirements](docs/macos.md#build-test-install).
 
@@ -80,6 +80,6 @@ Checks: `npm run lint`, `npm test`, `npm run build`.
 <p align="center">
   Built by <a href="https://github.com/dumpydon">@dumpydon</a> ·
   <a href="https://github.com/dumpydon/vigil/issues">Feedback</a> ·
-  <a href="https://vigil.dumpydon.workers.dev/download/privacy.html">Privacy</a>
+  <a href="https://vigil.dumpydon.workers.dev/privacy/">Privacy</a>
   <br><sub>Visual inspiration: <a href="https://www.vigilbar.com/">Vigilbar</a>.</sub>
 </p>

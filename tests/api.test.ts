@@ -5,8 +5,16 @@ let test:Awaited<ReturnType<typeof makeEnvironment>>
 beforeEach(async()=>{test=await makeEnvironment()},30_000)
 afterEach(async()=>{await test?.dispose()})
 describe('owner API and actual local D1 persistence',()=>{
+  it('retains the owner session and records while visiting the new public and dashboard routes',async()=>{
+    await test.login();const entry=test.op(3,2);await test.mutate(entry)
+    expect((await test.fetcher('/')).status).toBe(200)
+    expect((await test.fetcher('/dashboard/')).status).toBe(200)
+    expect((await test.fetcher('/api/session')).status).toBe(200)
+    const saved=(await test.snapshot()).entries.find(value=>value.id===entry.entry.id)
+    expect(saved?.easy).toBe(3);expect(saved?.external).toBe(2)
+  })
   it('allows public demos in same-origin frames while keeping the owner tracker unframeable',async()=>{
-    const tracker=await test.fetcher('/'),demo=await test.fetcher('/download/previews/usage.html')
+    const tracker=await test.fetcher('/dashboard/'),demo=await test.fetcher('/download/previews/usage.html')
     expect(tracker.status).toBe(200);expect(demo.status).toBe(200)
     expect(tracker.headers.get('content-security-policy')).toContain("frame-ancestors 'none'")
     expect(demo.headers.get('content-security-policy')).toContain("frame-ancestors 'self'")

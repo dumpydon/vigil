@@ -1,16 +1,17 @@
 # Production deployment
 
-- Website: **https://vigil.dumpydon.workers.dev/**
-- Public Mac download page: **https://vigil.dumpydon.workers.dev/download/**
+- Public website and Mac download: **https://vigil.dumpydon.workers.dev/**
+- Owner web dashboard: **https://vigil.dumpydon.workers.dev/dashboard/**
+- Legacy `/download/` links redirect to the public homepage.
 - Mac releases: **https://github.com/dumpydon/vigil/releases**
-- Compact window: **https://vigil.dumpydon.workers.dev/compact**
+- Compact window: **https://vigil.dumpydon.workers.dev/dashboard/compact/**
 - Source: **https://github.com/dumpydon/vigil**, public, branch `main`.
 - Worker: `vigil`, Workers Free.
 - D1 database: `vigil`, D1 Free.
 - Database UUID: `63cb3890-e7d8-481c-9f35-0287e8394b5f`.
 - Inspect records: [Cloudflare D1 Studio](https://dash.cloudflare.com/71600e008b6faafc09ce26b762e8411b/workers/d1/databases/63cb3890-e7d8-481c-9f35-0287e8394b5f/studio).
 
-The frontend and Worker API are deployed together. The main DB binding targets this remote database; `env.local` continues to use the separate local database. No paid plan, domain purchase, or unrelated project change was made.
+The public website, owner dashboard, and Worker API are deployed together in the same `vigil` Worker. `/install/`, `/privacy/`, `/changelog/`, `/tour/`, and `/first-launch/` are public pages. `/api/*` and its authentication are unchanged. The dashboard offline worker is scoped to `/dashboard/`; the old root worker retires without clearing IndexedDB, drafts, queues, cookies, or localStorage. The web manifest keeps its existing app ID while its launch URL moves to `/dashboard/`. The main DB binding targets this remote database; `env.local` continues to use the separate local database. No paid plan, domain purchase, or unrelated project change was made.
 
 ## Automatic deployment
 
@@ -68,6 +69,6 @@ No application entry was created for the smoke check. The durable owner session,
 
 ## Install the production Dock app
 
-Open **https://vigil.dumpydon.workers.dev/** in your regular browser and sign in. In Safari, choose Share → Add to Dock → Add. In Chrome, use its install control when offered. [Apple's Add to Dock instructions](https://support.apple.com/guide/safari/add-to-dock-ibrw9e991864/mac).
+Open **https://vigil.dumpydon.workers.dev/dashboard/** in your regular browser and sign in. In Safari, choose Share → Add to Dock → Add. In Chrome, use its install control when offered. [Apple's Add to Dock instructions](https://support.apple.com/guide/safari/add-to-dock-ibrw9e991864/mac).
 
 Launch this production installation from the Dock. A previously installed localhost app stays tied to localhost; installing the workers.dev site creates the production app with its own browser storage.
