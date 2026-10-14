@@ -16,6 +16,15 @@ button{font-family:inherit}button:focus-visible,a:focus-visible,summary:focus-vi
 .in .mini-floating-panel{animation:float-placement 8s cubic-bezier(.3,.7,.25,1) 1s infinite}@keyframes float-placement{0%,24%,100%{transform:translate(0,0)}40%,68%{transform:translate(36px,20px)}83%{transform:translate(0,0)}}
 .dltoast .dt-ic{display:flex;width:36px;height:36px;align-items:center;justify-content:center;color:var(--acc);border:1px solid #818cf84d;border-radius:50%;background:#818cf812;flex-shrink:0}.dltoast .dt-ic svg{width:18px;height:18px}.dltoast .dt-copy{min-width:0}.dltoast .dt-copy span{display:block;font-size:11.5px;color:var(--tx2);line-height:1.35;margin-top:2px}.dltoast #dlguide{padding:7px 15px;background:var(--accd);border:0;border-radius:99px;font-size:12px;font-weight:700;line-height:1.5;white-space:nowrap;color:white;cursor:pointer}.dltoast .dltx{color:var(--mut);cursor:pointer;font-size:13px;background:none;border:0;line-height:1;padding:8px 10px 8px 2px;flex-shrink:0}
 .fbtag{font-size:14px;font-weight:600;color:var(--tx2)}.footcopy{font-size:12px}.footmega{user-select:none}
+.footby{flex-wrap:wrap;gap:8px}
+.footby .fbwho{gap:8px;min-height:36px;font-size:18.75px;font-weight:700;letter-spacing:.025em;color:#f87171;transition:color .15s}
+.footby .fbwho span{text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px}
+.footby .fbwho:hover{color:#fca5a5}
+.footer-github{display:block;width:21px;height:21px;flex-shrink:0}
+.footer-socials{display:flex;align-items:center}
+.footer-socials a{display:inline-flex;align-items:center;gap:8px;min-height:32px;font-size:13.5px;font-weight:500;color:var(--tx2);transition:color .15s}
+.footer-socials a:hover{color:var(--tx)}
+.footer-socials svg{display:block;width:18px;height:18px;flex-shrink:0}
 @media(max-width:800px){#hifr{left:50%;top:65px;transform:translateX(-50%) scale(.78);transform-origin:top center}}
 @media(max-width:560px){.hero-notification{width:205px;right:10px;top:55px}.dltoast .dt-copy{width:100%}.mini-floating-panel{left:32%;top:25%}}
 @media(prefers-reduced-motion:reduce){.mini-floating-panel{animation:none!important}.hero-notification{transition:none}}
