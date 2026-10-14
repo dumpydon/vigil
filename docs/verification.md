@@ -113,3 +113,12 @@ fixed preview chrome, range/day details, architecture menus, FAQ, tour playback,
 modal dismissal and first-open guidance. The tracker service worker excludes
 public download routes; the static CSP permits only same-origin demo frames.
 Shared automated checks and production build must pass before publication.
+
+
+The public `macos-v1.0.0-beta.1` release was built and published by GitHub Actions
+from the immutable source tag. All four public binary downloads were retrieved
+anonymously and matched their published SHA-512 values and sizes. The public
+Apple Silicon DMG's app also passed the native local-only smoke check on the
+build Mac, with a nonpersistent test store and zero API requests. Both publicly
+downloaded DMGs passed mounted bundle/signature/architecture verification.
+The website uses the published release's manifest, not a local rebuild's hashes.

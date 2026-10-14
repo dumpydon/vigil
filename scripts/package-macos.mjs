@@ -48,6 +48,6 @@ for(const architecture of architectures){
 const manifest={version:release.version,tag,minimumMacOS:release.minimumMacOS,localOnly:true,signing:'ad-hoc',notarized:false,assets}
 await writeFile(path.join(output,'release.json'),JSON.stringify(manifest,null,2)+'\n')
 await writeFile(path.join(output,'SHA512SUMS.txt'),assets.map(asset=>`${asset.sha512}  ${asset.file}`).join('\n')+'\n')
-// A partial-architecture CI job must not overwrite the public two-target manifest.
-if(architectures.length===2)await writeFile(path.join(root,'site/download/release.json'),JSON.stringify(manifest,null,2)+'\n')
+// Build output stays separate from published metadata. After publication, copy
+// the release's manifest to the site so its hashes describe the actual downloads.
 console.log(`Packaged ${release.version}: ${assets.map(asset=>asset.file).join(', ')}`)
