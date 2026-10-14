@@ -20,4 +20,5 @@
 .tour-local>small{display:block;font-size:9px;color:#777d89;margin-top:16px}.tour-local.complete{border-color:#818cf87a;box-shadow:0 24px 60px #0007,0 0 35px #818cf81a}
 #tour-loading{position:absolute;right:76px;bottom:22px;color:#9c9faa;font-size:11px}
 .paused .tour-copy,.paused .tour-local *{animation-play-state:paused!important}
+.paused .tour-copy{animation:none;opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.tour-copy.enter{animation:none}.tour-local-files>div,.tour-local-files b{transition:none}}
