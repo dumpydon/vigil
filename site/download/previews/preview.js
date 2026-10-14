@@ -68,7 +68,51 @@
   function story(){if(motion.matches)return;storyTimers.forEach(clearTimeout);storyTimers=[];reset();const cursor=one('.virtual-cursor'),target=one('[data-add="easy"][data-amount="1"]');if(!cursor||!target)return;const r=target.getBoundingClientRect(),p=cursor.parentElement.getBoundingClientRect();cursor.style.left=(r.left-p.left+r.width/2)+'px';cursor.style.top=(r.top-p.top+r.height/2)+'px';storyTimers.push(setTimeout(()=>cursor.classList.add('on'),500),setTimeout(()=>{cursor.classList.add('click');add('easy',1)},1500),setTimeout(()=>cursor.classList.remove('click'),1700),setTimeout(()=>{const next=one('[data-add="external"][data-amount="2"]');if(!next)return;const n=next.getBoundingClientRect();cursor.style.left=(n.left-p.left+n.width/2)+'px';cursor.style.top=(n.top-p.top+n.height/2)+'px'},2600),setTimeout(()=>{cursor.classList.add('click');add('external',2)},3600),setTimeout(()=>cursor.classList.remove('click'),3800),setTimeout(()=>cursor.classList.remove('on'),4600))}
   if(query.get('animate')==='1'&&!motion.matches){if(typeof IntersectionObserver==='function'){const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){story();observer.disconnect()}},{threshold:.2});observer.observe(one('.surface'))}else story()}
   // Optional same-origin parent orchestration for the landing page's cinematic hero.
-  addEventListener('message',event=>{if(event.source!==parent||event.origin!==location.origin)return;const data=event.data?.applyVigilPreview;if(!data||typeof data!=='object')return;if(data.action==='reset')reset();else if(data.action==='play')story();else if(data.action==='add')add(data.category,data.amount);else if(data.action==='tooltip'){usageController?.tooltip('2026-10-09')}else if(data.action==='alert')message('Sample goal update · 38 of 75 today')});
+  addEventListener('message',event=>{if(event.source!==parent||event.origin!==location.origin)return;const data=event.data?.applyVigilPreview;if(!data||typeof data!=='object')return;if(data.action==='reset')reset();else if(data.action==='play')story();else if(data.action==='add')add(data.category,data.amount);else if(data.action==='tooltip'){usageController?.tooltip('2026-10-09')}else if(data.action==='alert')message('Sample goal update · 38 of 75 today');else if(data.action==='tour')renderTour(data);else if(data.action==='tour-pause'&&query.get('tour')==='1')document.body.classList.add('tour-paused')});
+
+  // The tour owns the clock. These frames only render its synthetic state, so
+  // pausing, replaying and jumping chapters never leave a demo running ahead.
+  const tourState={run:-1,time:-1,selector:null,from:null,point:null,movedAt:0};
+  const smooth=value=>{const t=Math.max(0,Math.min(1,value));return t*t*(3-2*t)};
+  function tourPointer(selector,time,clickAt){
+    const surface=one('.surface'),target=one(selector);if(!target||!surface)return;
+    let cursor=one('.virtual-cursor');
+    if(!cursor){
+      const holder=document.createElement('div');holder.innerHTML='<svg class="virtual-cursor" viewBox="0 0 20 24" aria-hidden="true"><path d="M2 1.5v17l4.6-4.3 3.1 7.3 3-1.3-3.1-7.1 6.3-.5L2 1.5Z" fill="white" stroke="#08090b" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+      cursor=holder.firstElementChild;surface.append(cursor);
+    }
+    const rect=target.getBoundingClientRect(),bounds=surface.getBoundingClientRect(),scale=surface.offsetWidth/bounds.width;
+    const destination=[(rect.left-bounds.left+rect.width/2)*scale,(rect.top-bounds.top+rect.height/2)*scale];
+    if(tourState.selector!==selector){tourState.selector=selector;tourState.from=tourState.point||[destination[0]+22,destination[1]+32];tourState.movedAt=time}
+    const progress=motion.matches?1:smooth((time-tourState.movedAt)/.45);
+    tourState.point=destination.map((value,i)=>tourState.from[i]+(value-tourState.from[i])*progress);
+    cursor.style.left=tourState.point[0]+'px';cursor.style.top=tourState.point[1]+'px';cursor.classList.add('on');cursor.classList.toggle('click',Math.abs(time-clickAt)<.12);
+    all('.tour-highlight').forEach(el=>el.classList.remove('tour-highlight'));target.classList.add('tour-highlight');
+  }
+  function renderTour(data){
+    if(query.get('tour')!=='1'||!Number.isFinite(data.time)||data.time<0||data.time>6||![data.easy,data.external].every(n=>Number.isInteger(n)&&n>=0&&n<=999))return;
+    if(data.run!==tourState.run||data.time<tourState.time){
+      storyTimers.forEach(clearTimeout);clearTimeout(toastTimer);clearTimeout(tipTimer);reset();
+      Object.assign(tourState,{run:data.run,time:-1,selector:null,from:null,point:null,movedAt:0});
+    }
+    tourState.time=data.time;document.body.classList.add('tour-demo');document.body.classList.toggle('tour-paused',!data.playing);
+    const time=data.time,kind=document.body.dataset.preview;
+    if(kind==='usage'){usageController.tour(data);return}
+    if(kind==='overview'||kind==='compact'){
+      if(state.easy!==data.easy||state.external!==data.external){state.easy=data.easy;state.external=data.external;render();pulse()}
+      const today=kind==='overview',selector=today?(time<1.25?'[data-add="easy"][data-amount="1"]':time<2.6?'[data-add="external"][data-amount="2"]':time<4.2?'[data-add="easy"][data-amount="5"]':'[data-meter] .progress'):(time<1.4?'[data-add="external"][data-amount="2"]':time<3.15?'[data-add="easy"][data-amount="3"]':time<4.8?'.app-header':'[data-meter] .progress');
+      tourPointer(selector,time,today?(time<1.25?.7:time<2.6?2:time<4.2?3.3:-1):(time<1.4?.7:time<3.15?2.1:-1));
+      const box=one('.demo-message');box.classList.toggle('on',time>=.7&&time<5.7);
+      one('[data-message]',box).textContent=today?(time<2?'Added 1 Easy Apply application':time<3.3?'Added 2 External / form applications':'Added 5 Easy Apply applications'):(time<2.1?'Added 2 External / form applications':'Added 3 Easy Apply applications');
+    }else if(kind==='alerts'){
+      const cards=all('.alert-card'),warning=one('.alert-card.warning');
+      one('.alert-copy strong',warning).textContent='Halfway there';one('.alert-copy p',warning).textContent=data.total+' of 75 today. Your applications are adding up.';
+      cards.forEach(card=>{const seen=time>=3||card===warning&&time>=1.55;card.classList.toggle('read',seen);const button=one('[data-read]',card);button.disabled=seen;button.textContent=seen?'✓':'Read';button.setAttribute('aria-label',seen?'Read':'Mark alert as read')});
+      const pause=one('[data-pause]'),paused=time>=4.35;pause.setAttribute('aria-pressed',String(paused));pause.style.color=paused?'#fbbf24':'';
+      one('.alerts-footnote').textContent=paused?'Alerts paused for today · UTC':'Soft chime · Notifications enabled';all('.rail .dot').forEach(dot=>{dot.hidden=time>=3});
+      tourPointer(time<2.3?'.warning [data-read]':time<3.7?'[data-read-all]':'[data-pause]',time,time<2.3?1.55:time<3.7?3:4.35);
+    }
+  }
 
   // BEGIN SAMPLE MODEL — fixed UTC data, shared by every section of the Usage media.
   function makeUsageSample(){
@@ -248,7 +292,26 @@
     view.addEventListener('keydown',event=>{if(event.key==='Escape'){hideTooltip(true);showPeriod(null,false)}});
     view.addEventListener('scroll',()=>hideTooltip(),{passive:true});
     render();
-    return {render,add:(category,amount)=>{if(model.add(category,amount)){render();message('Added '+number(amount)+' '+label(category)+' applications')}},reset:()=>{model.reset();days=7;selected=null;visible=10;pinnedTooltip=null;openPeriod=null;all('[data-range]').forEach(b=>{b.classList.toggle('on',b.dataset.range==='7');b.setAttribute('aria-pressed',String(b.dataset.range==='7'))});view.scrollTop=0;render()},tooltip:date=>showTooltip(one('[data-chart-day="'+date+'"]'))};
+    function tour(data){
+      const before=model.counts(model.today),range=data.time>=.9?15:7;
+      const changed=before.easy!==data.easy||before.external!==data.external||days!==range;
+      if(before.easy!==data.easy||before.external!==data.external)model.adjustDay(model.today,data.easy,data.external);
+      days=range;all('[data-range]').forEach(b=>{const on=Number(b.dataset.range)===days;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))});
+      if(changed)render();
+      view.style.scrollBehavior='auto';
+      const offset=selector=>{const section=one(selector);return Math.min(view.scrollHeight-view.clientHeight,Math.max(0,section.getBoundingClientRect().top-view.getBoundingClientRect().top+view.scrollTop-16))};
+      const periods=offset('.usage-periods'),recent=offset('.recent');
+      const scroll=data.time<2.8?0:data.time<4.1?periods*smooth((data.time-2.8)/1.05):periods+(recent-periods)*smooth((data.time-4.1)/1.15);
+      view.scrollTop=scroll;
+      if(data.time<2.8){
+        const date=data.time<1.8?'2026-10-09':'2026-10-12';showTooltip(one('[data-chart-day="'+date+'"]'));
+        tourPointer(data.time<.9?'[data-range="15"]':'[data-chart-day="'+date+'"]',data.time,data.time<.9?.9:-1);
+      }else{
+        hideTooltip(true);one('.virtual-cursor')?.classList.remove('on');all('.tour-highlight').forEach(el=>el.classList.remove('tour-highlight'));
+        if(data.time>=5.3)tourPointer('[data-usage-entry-action="edit"]',data.time,-1);
+      }
+    }
+    return {render,tour,add:(category,amount)=>{if(model.add(category,amount)){render();message('Added '+number(amount)+' '+label(category)+' applications')}},reset:()=>{model.reset();days=7;selected=null;visible=10;pinnedTooltip=null;openPeriod=null;all('[data-range]').forEach(b=>{b.classList.toggle('on',b.dataset.range==='7');b.setAttribute('aria-pressed',String(b.dataset.range==='7'))});view.scrollTop=0;render()},tooltip:date=>showTooltip(one('[data-chart-day="'+date+'"]'))};
   }
 
   render();

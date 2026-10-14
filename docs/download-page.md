@@ -16,8 +16,10 @@ included.
 All preview records are synthetic. Media are interactive HTML at fixed design
 sizes, scaled to available space. Usage content scrolls inside a fixed glass
 shell, header and rail, with OS-native scrollbars and a focusable region. The
-31-second hero is a one-shot story with replay; the 90-second tour has playback,
-scene selection and replay. Sound samples play only after an explicit click.
+31-second hero is a one-shot story with replay; the 30-second tour has playback,
+scene selection and replay. Five six-second chapters share one elapsed-time clock;
+preloaded previews follow that clock for logging, window movement, chart details,
+scrolling and alerts. Pausing freezes the demonstrations, and replay resets them. Sound samples play only after an explicit click.
 Reduced motion and JavaScript-free FAQ content remain supported.
 
 The Usage demonstration covers history and corrections in its scrollable panel;
@@ -28,7 +30,7 @@ The source contains:
 
 - `index.html`, `site.css`, `apply.css`, `site.js`: main page and interactions.
 - `previews/`: product demonstrations without app storage or account access.
-- `demo.html`, `tour.*`: 90-second tour and playback.
+- `demo.html`, `tour.*`: 30-second tour and playback.
 - `install.html`, `guide*`, `pages.js`: illustrated first-launch guide.
 - `privacy.html`, `changelog.html`, `document.css`: public product documents.
 - `release.json`: generated version, asset URLs, sizes and SHA-512 values.
