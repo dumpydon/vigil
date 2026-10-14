@@ -1,4 +1,5 @@
 /* An illustrated macOS walkthrough. No system settings, credentials or app data. */
+import {createReplayLoop,pageReplayBudget,REPLAY_LIMIT} from './replay-loop.js'
 (() => {
   'use strict'
   const query=new URLSearchParams(location.search)
@@ -15,7 +16,8 @@
     {start:13,end:15,preview:14.5,label:'YOUR MENU BAR',title:'Find Apply Vigil in your menu bar.',caption:'There is no Dock icon. Click the menu bar icon, choose a goal, and start your daily watch.'},
   ]
   const desktop=one('.desktop'),viewport=one('.viewport'),play=one('.play-control'),range=one('input[type="range"]'),pointer=one('.demo-pointer')
-  let time=0,playing=false,frame=0,last=0,userControlled=false,previousStep=-1
+  let time=0,playing=false,frame=0,last=0,userControlled=false,previousStep=-1,runStarted=false,visible=true,resumeWhenVisible=false
+  const loop=createReplayLoop({budget:pageReplayBudget(window,'first-launch'),replay:()=>{time=0;runStarted=false;start()},onChange:render})
   const clamp=(value,min=0,max=1)=>Math.max(min,Math.min(max,value))
   const smooth=value=>{const t=clamp(value);return t*t*(3-2*t)}
   const lerp=(a,b,t)=>a+(b-a)*t
@@ -35,6 +37,8 @@
   function render(){
     const index=time>=15?4:steps.findIndex(step=>time>=step.start&&time<step.end),step=steps[index],local=time-step.start
     one('.player').dataset.time=time.toFixed(2)
+    one('.player').dataset.playCount=String(loop.plays)
+    one('.player').dataset.replayWaiting=String(loop.waiting)
     all('[data-scene]').forEach(scene=>scene.classList.toggle('is-active',Number(scene.dataset.scene)===index))
     desktop.classList.toggle('ready',index===4)
     desktop.classList.toggle('privacy-selected',index===2&&local>=.9)
@@ -52,9 +56,10 @@
     range.value=String(time)
     range.setAttribute('aria-valuetext',`${Math.floor(time)} seconds, ${step.title}`)
     one('.time').textContent=`0:${String(Math.floor(time)).padStart(2,'0')} / 0:15`
-    play.setAttribute('aria-label',playing?'Pause the installation walkthrough':time>=15?'Replay the installation walkthrough':'Play the 15-second installation walkthrough')
-    one('[data-play-icon]').textContent=playing?'Ⅱ':time>=15?'↻':'▶'
-    one('[data-play-text]').textContent=playing?'Pause':time>=15?'Replay':'Play'
+    const active=playing||loop.waiting
+    play.setAttribute('aria-label',active?'Pause the installation walkthrough':time>=15?'Replay the installation walkthrough':'Play the 15-second installation walkthrough')
+    one('[data-play-icon]').textContent=active?'Ⅱ':time>=15?'↻':'▶'
+    one('[data-play-text]').textContent=active?'Pause':time>=15?'Replay':'Play'
     const dragged=one('.dragged-app'),dragProgress=smooth((local-.8)/1.3)
     dragged.style.opacity=index===0&&local>=.8&&local<2.5?'1':'0'
     dragged.style.transform=`translateX(${dragProgress*300}px) scale(1.04)`
@@ -73,16 +78,21 @@
   function tick(now){
     if(!playing)return
     time=clamp(time+(now-last)/1000,0,15);last=now
-    if(time>=15)playing=false
+    if(time>=15){playing=false;runStarted=false;if(!motion.matches&&!query.has('capture'))loop.finish()}
     render()
     if(playing)frame=requestAnimationFrame(tick)
   }
-  function pause(){playing=false;cancelAnimationFrame(frame);render()}
-  function start(){if(time>=15)time=0;playing=true;last=performance.now();render();frame=requestAnimationFrame(tick)}
-  play.addEventListener('click',()=>{userControlled=true;if(playing)pause();else start()})
-  one('.restart-control').addEventListener('click',()=>{userControlled=true;pause();time=0;start()})
-  range.addEventListener('input',()=>{const next=Number(range.value);userControlled=true;pause();time=clamp(next,0,15);render()})
-  all('[data-step]').forEach(button=>button.addEventListener('click',()=>{userControlled=true;pause();time=steps[Number(button.dataset.step)].preview;render()}))
+  function pause(manual=true){playing=false;cancelAnimationFrame(frame);if(manual){resumeWhenVisible=false;loop.cancel()}render()}
+  function start(){
+    loop.cancel();resumeWhenVisible=false
+    if(time>=15){time=0;runStarted=false}
+    if(!runStarted){loop.begin();runStarted=true}
+    playing=true;last=performance.now();render();frame=requestAnimationFrame(tick)
+  }
+  play.addEventListener('click',()=>{userControlled=true;if(playing||loop.waiting)pause();else start()})
+  one('.restart-control').addEventListener('click',()=>{userControlled=true;pause();time=0;runStarted=false;start()})
+  range.addEventListener('input',()=>{const next=Number(range.value);userControlled=true;pause();time=clamp(next,0,15);runStarted=false;render()})
+  all('[data-step]').forEach(button=>button.addEventListener('click',()=>{userControlled=true;pause();time=steps[Number(button.dataset.step)].preview;runStarted=false;render()}))
   function resize(){
     desktop.style.transform=`scale(${viewport.clientWidth/960})`
     if(window!==parent)parent.postMessage({applyVigilInstallGuide:{height:document.body.scrollHeight}},location.origin)
@@ -92,12 +102,17 @@
   addEventListener('keydown',event=>{
     if(event.key==='Escape'&&window!==parent){event.preventDefault();parent.postMessage({applyVigilInstallGuide:{close:true}},location.origin)}
   })
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()})
+  function availability(){
+    const available=visible&&!document.hidden
+    loop.setEnabled(available&&!motion.matches)
+    if(!available&&playing){resumeWhenVisible=true;pause(false)}
+    else if(available&&resumeWhenVisible){resumeWhenVisible=false;start()}
+  }
+  document.addEventListener('visibilitychange',availability)
   if(typeof IntersectionObserver==='function')new IntersectionObserver(entries=>{
-    const visible=entries.some(entry=>entry.isIntersecting)
-    if(!visible)pause()
-    else if(!userControlled&&!motion.matches&&!query.has('capture')&&time===0)start()
+    visible=entries.some(entry=>entry.isIntersecting);availability()
+    if(visible&&!document.hidden&&!userControlled&&!motion.matches&&!query.has('capture')&&time===0&&!runStarted&&loop.plays<REPLAY_LIMIT)start()
   },{threshold:.35}).observe(one('.film'))
-  motion.addEventListener('change',()=>{if(motion.matches)pause()})
-  resize();render()
+  motion.addEventListener('change',()=>{if(motion.matches)pause();availability()})
+  resize();render();availability()
 })()
