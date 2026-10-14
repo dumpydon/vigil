@@ -54,12 +54,18 @@ coverage.
 2. Review and push source, checksums and public metadata. Merge the reviewed
    source into `main`; production Workers Builds runs `npm run build` and the
    existing deploy command. No database migration is required for this release.
-3. Tag that source with `macos-v<version>`. Create a GitHub prerelease with the four
-   binary assets, checksum file and manifest. Describe features, local storage,
-   compatibility limits and first-open approval. Do not replace published assets
-   silently; use a new beta version for fixes.
-4. Download the public assets anonymously and compare SHA-512 values to the
-   manifest. Mount each DMG read-only, inspect its app, and verify the signature
+3. Tag that source with `macos-v<version>`. Update `macos/release-notes.md`, then
+   run **Publish verified Mac beta** in GitHub Actions with that existing tag.
+   Its read-only build job checks out the immutable tag, reruns shared checks,
+   builds both installers and verifies mounted DMGs/extracted ZIPs. A separate
+   publisher job verifies the exact files and hashes, then uses a repository-
+   scoped token to publish the prerelease. It cannot overwrite an existing
+   release. No personal access token or browser file permission is needed.
+4. Download the published `release.json` into `site/download/release.json`,
+   review that its version/URLs match the release, and commit it. CI rebuilds
+   can have different bytes from local packages; publish the CI manifest with
+   the CI binaries and deploy that manifest on the site. Download the public
+   assets anonymously and compare SHA-512 values to the manifest. Mount each DMG read-only, inspect its app, and verify the signature
    and executable architecture. Check the ZIP's executable permissions.
 5. Verify `/download/`, installation guide, tour, preview scrolling, sound samples,
    architecture picker and direct download. Confirm `/api/snapshot` still rejects

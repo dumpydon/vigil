@@ -60,8 +60,10 @@ It never asks people to disable Gatekeeper. Updates are manual replacements.
 Developer ID signing, notarization and signed automatic updates can be considered
 later, with any paid enrollment handled separately.
 
-GitHub validates branch and pull-request changes. Mac CI publishes build
-artifacts, not releases. Those artifacts are public because this repository is
+GitHub validates branch and pull-request changes. Mac validation CI publishes build
+artifacts. The separate, manually dispatched **Publish verified Mac beta**
+workflow builds an existing reviewed tag and publishes its verified release
+through a dedicated repository-scoped publisher job. Those artifacts are public because this repository is
 public. Cloudflare production follows `main`; branch preview builds were found
 disabled during implementation. No schema change, owner setup, credential reset
 or data migration belongs in this release.
