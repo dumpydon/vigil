@@ -20,6 +20,10 @@ shell, header and rail, with OS-native scrollbars and a focusable region. The
 scene selection and replay. Sound samples play only after an explicit click.
 Reduced motion and JavaScript-free FAQ content remain supported.
 
+The Usage demonstration covers history and corrections in its scrollable panel;
+there is no duplicate full-height history section. The goal-reached sound sample
+uses the native ✅ emoji requested for its celebration.
+
 The source contains:
 
 - `index.html`, `site.css`, `apply.css`, `site.js`: main page and interactions.
