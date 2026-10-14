@@ -35,3 +35,14 @@ vigil-????-??-??*.csv
 *.dump.sql
 tmp/
 .tmp/
+
+# Native release output and signing credentials
+*.app/
+*.dSYM/
+*.dmg
+*.pkg
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+site/download/assets/sounds/

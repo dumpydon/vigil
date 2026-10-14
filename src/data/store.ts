@@ -1,5 +1,9 @@
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb'
-import { DEFAULT_GOAL, FIRST_DAY, goalFor, planDayAdjustment, shiftDay, utcDay, validateMutation, type DayEntry, type Entry, type Mutation, type MutationResult, type Snapshot } from '../../shared/model'
+import { DEFAULT_GOAL, FIRST_DAY, goalFor, shiftDay, utcDay, validateMutation, type DayEntry, type Entry, type Mutation, type MutationResult, type Snapshot } from '../../shared/model'
+import {desktopFetcher,isNative,isDesktopPreview,isLocalOnly} from '../desktop/bridge'
+import {previewFetcher} from '../desktop/preview'
+import {endpoint,project,replaceGoal} from './operations'
+import {LocalWorkspace} from './local-workspace'
 
 export type QueueRecord={operation:Mutation;sequence:number;status:'pending'|'inflight'|'conflict'|'invalid';error?:string;cloudEntry?:Entry|null;cloudGoal?:number}
 type Lease={owner:string;until:number}
@@ -14,46 +18,8 @@ export interface AppState {
 export interface LocalMetadataStore {
   updateLocalValue<T>(key:`ui.${string}`,initial:T,change:(value:T)=>T):Promise<{value:T;changed:boolean}>
 }
-type Options={name?:string;clock?:()=>Date;fetcher?:typeof fetch;online?:()=>boolean;broadcast?:boolean;autoRetry?:boolean}
-const replaceGoal=(goals:Snapshot['policies'],date:string,value:number)=>[...goals.filter(g=>g.date!==date),{date,value}].sort((a,b)=>a.date.localeCompare(b.date))
-
-export function project(base:Snapshot,queue:QueueRecord[]):Snapshot {
-  const entries=new Map(base.entries.map(e=>[e.id,{...e}]))
-  let policies=[...base.policies],overrides=[...base.overrides],goalRevision=base.goalRevision,trackingStart=base.trackingStart
-  for(const {operation:op,status} of queue){
-    if(status==='invalid')continue
-    if(op.type==='create'){
-      if(!entries.has(op.entry.id))entries.set(op.entry.id,{...op.entry,createdAt:op.entry.loggedAt,updatedAt:op.entry.loggedAt,version:1,deleted:false})
-      trackingStart=trackingStart<op.entry.date?trackingStart:op.entry.date
-    }else if(op.type==='update'){
-      const current=entries.get(op.entryId)
-      if(current)entries.set(op.entryId,{...current,date:op.date,easy:op.easy,external:op.external,version:op.expectedVersion+1,backdated:utcDay(new Date(current.loggedAt))!==op.date})
-      trackingStart=trackingStart<op.date?trackingStart:op.date
-    }else if(op.type==='delete'){
-      const current=entries.get(op.entryId);if(current)entries.set(op.entryId,{...current,deleted:true,version:op.expectedVersion+1})
-    }else if(op.type==='day'){
-      const plan=planDayAdjustment(op)
-      for(const change of plan.changes){const e=entries.get(change.id);if(e)entries.set(e.id,{...e,...change,updatedAt:op.loggedAt})}
-      if(plan.addition&&!entries.has(plan.addition.id))entries.set(plan.addition.id,plan.addition)
-      trackingStart=trackingStart<op.date?trackingStart:op.date
-    }else if(op.type==='goal'){
-      overrides=replaceGoal(overrides,op.date,op.value)
-      if(op.future)policies=replaceGoal(policies,shiftDay(op.date,1),op.value)
-      goalRevision++
-    }else{
-      for(const item of op.items){
-        if(item.kind==='entry'&&!entries.has(item.entry.id))entries.set(item.entry.id,item.entry)
-        else if(item.kind==='policy'&&!policies.some(g=>g.date===item.date))policies.push({date:item.date,value:item.value})
-        else if(item.kind==='override'&&!overrides.some(g=>g.date===item.date))overrides.push({date:item.date,value:item.value})
-      }
-      goalRevision++;trackingStart=trackingStart<op.trackingStart?trackingStart:op.trackingStart
-    }
-  }
-  return {...base,entries:[...entries.values()],policies,overrides,goalRevision,trackingStart}
-}
-export function endpoint(op:Mutation):{url:string;method:string}{
-  switch(op.type){case 'create':return {url:'/api/entries',method:'POST'};case 'update':return {url:`/api/entries/${op.entryId}`,method:'PATCH'};case 'delete':return {url:`/api/entries/${op.entryId}`,method:'DELETE'};case 'day':return {url:`/api/days/${op.date}`,method:'PUT'};case 'goal':return {url:`/api/goals/${op.date}`,method:'PUT'};case 'import':return {url:'/api/import',method:'POST'}}
-}
+type Options={name?:string;clock?:()=>Date;fetcher?:typeof fetch;online?:()=>boolean;broadcast?:boolean;autoRetry?:boolean;localOnly?:boolean}
+export {project,endpoint} from './operations'
 
 export class SyncEngine {
   private db:IDBPDatabase<LocalDB>|null=null
@@ -69,7 +35,7 @@ export class SyncEngine {
   private initPromise:Promise<void>|null=null
   private options:Required<Options>
   constructor(options:Options={}){
-    this.options={name:options.name??'vigil-personal',clock:options.clock??(()=>new Date()),fetcher:options.fetcher??fetch.bind(globalThis),online:options.online??(()=>typeof navigator==='undefined'||navigator.onLine),broadcast:options.broadcast??true,autoRetry:options.autoRetry??true}
+    this.options={name:options.name??'vigil-personal',clock:options.clock??(()=>new Date()),fetcher:options.fetcher??fetch.bind(globalThis),online:options.localOnly?()=>true:options.online??(()=>typeof navigator==='undefined'||navigator.onLine),broadcast:options.broadcast??true,autoRetry:options.autoRetry??true,localOnly:options.localOnly??false}
   }
   getState=()=>this.state
   subscribe=(fn:()=>void)=>{this.listeners.add(fn);return()=>{this.listeners.delete(fn)}}
@@ -95,7 +61,7 @@ export class SyncEngine {
     return this.initPromise
   }
   private wake=()=>{void this.sync()}
-  private wentOffline=()=>this.emit({status:'offline'})
+  private wentOffline=()=>{if(!this.options.localOnly)this.emit({status:'offline'})}
   private visibility=()=>{if(document.visibilityState==='visible')this.wake()}
   private async reloadLocal(){
     if(!this.db)return
@@ -162,7 +128,7 @@ export class SyncEngine {
   async updateEntry(id:string,easy:number,external:number,date:string,expectedVersion?:number){
     return this.enqueue(s=>{
       const entry=s.entries.find(e=>e.id===id&&!e.deleted)
-      if(!entry)throw new Error('This entry is no longer active. Reload its cloud value.')
+      if(!entry)throw new Error('This entry is no longer active. Reload its saved value.')
       return {id:crypto.randomUUID(),type:'update',entryId:id,expectedVersion:expectedVersion??entry.version,date,easy,external}
     })
   }
@@ -277,7 +243,7 @@ export class SyncEngine {
             if(data.snapshot&&(!old||data.snapshot.revision>=old.revision))await tx.objectStore('meta').put(data.snapshot,'snapshot')
             await tx.done;await this.reloadLocal();this.emit({status:'retry',error:data.error??'Review your pending change.'});this.broadcast();return
           }
-          throw new Error(data.error??'The cloud did not acknowledge this change.')
+          throw new Error(data.error??'This change was not acknowledged.')
         }
         await this.acknowledge(next,data)
       }
@@ -309,7 +275,7 @@ export class SyncEngine {
         const cloud=base.entries.find(e=>e.id===op.entryId&&!e.deleted)
         if(cloud)replacement={...op,id:crypto.randomUUID(),expectedVersion:cloud.version}
       }
-      if(!replacement){tx.abort();throw new Error('This record cannot be reapplied. Keep the cloud value and create a new entry if needed.')}
+      if(!replacement){tx.abort();throw new Error('This record cannot be reapplied. Keep the saved value and create a new entry if needed.')}
       await tx.objectStore('queue').delete(id)
       await tx.objectStore('queue').put({operation:replacement,sequence:record.sequence,status:'pending'})
       // Rebase dependent operations onto the explicitly accepted new version.
@@ -324,7 +290,7 @@ export class SyncEngine {
     // Retain the whole import in one local transaction before any chunk can reach the cloud.
     const tx=this.db.transaction(['meta','queue'],'readwrite')
     try{
-      if(!await tx.objectStore('meta').get('snapshot'))throw new Error('Load your owner workspace before importing.')
+      if(!await tx.objectStore('meta').get('snapshot'))throw new Error('Load your workspace before importing.')
       let sequence=Number(await tx.objectStore('meta').get('sequence')??0)
       for(const operation of operations)await tx.objectStore('queue').add({operation,sequence:++sequence,status:'pending'})
       await tx.objectStore('meta').put(sequence,'sequence');await tx.done
@@ -337,7 +303,7 @@ export class SyncEngine {
     if(typeof window!=='undefined'){window.removeEventListener('focus',this.wake);window.removeEventListener('online',this.wake);window.removeEventListener('offline',this.wentOffline);document.removeEventListener('visibilitychange',this.visibility)}
   }
 }
-export const engine=new SyncEngine()
+export const engine=new SyncEngine(isLocalOnly?{name:'apply-vigil-local-cache-v1',fetcher:new LocalWorkspace().fetcher,localOnly:true}:isNative?{fetcher:desktopFetcher}:isDesktopPreview?{name:'apply-vigil-isolated-preview',fetcher:previewFetcher()}: {})
 // Storage/sync code needs a clean instance on a development update. Durable state survives reload.
 if(import.meta.hot)import.meta.hot.accept(()=>location.reload())
 export function emptySnapshot(day=utcDay()):Snapshot{return {entries:[],policies:[{date:FIRST_DAY,value:DEFAULT_GOAL}],overrides:[],trackingStart:day,revision:0,goalRevision:0,serverNow:new Date().toISOString()}}

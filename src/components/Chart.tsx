@@ -38,6 +38,6 @@ export default function Chart({series,selected,onSelect}:{series:Daily[];selecte
         </g>
       })}
     </svg>
-    {detail&&<div className="chart-tooltip" role="tooltip" style={{left:`clamp(min(50%, 7.75rem), ${hotX}%, max(50%, calc(100% - 7.75rem)))`}}><strong>{longDate(detail.date)} · UTC</strong><div><span>Total</span><b>{number(detail.total)}</b></div><div><span className="easy-text">Easy Apply</span><b>{number(detail.easy)}</b></div><div><span className="external-text">External / form</span><b>{number(detail.external)}</b></div><div><span>Goal {number(detail.goal)}</span><b>{(detail.total/detail.goal*100).toFixed(1)}%</b></div>{!detail.tracking&&<small>Before tracking began</small>}</div>}
+    {detail&&<div className="chart-tooltip" role="tooltip" style={{left:`clamp(min(50%, 7.75rem), ${hotX}%, max(50%, calc(100% - 7.75rem)))`}}><strong>{longDate(detail.date)} · UTC</strong><div className="chart-tooltip-total"><span>Total</span><b>{number(detail.total)}</b></div><div><span className="easy-text">Easy Apply</span><b>{number(detail.easy)}</b></div><div><span className="external-text">External / form</span><b>{number(detail.external)}</b></div><div><span>Goal {number(detail.goal)}</span><b>{(detail.total/detail.goal*100).toFixed(1)}%</b></div>{!detail.tracking&&<small>Before tracking began</small>}</div>}
   </div>
 }

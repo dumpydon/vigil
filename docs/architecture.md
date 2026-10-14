@@ -1,5 +1,15 @@
 # Architecture and data behavior
 
+## Native Mac companion
+
+Apply Vigil's Swift/AppKit host bundles this same React application inside
+WebKit. Its menu bar dashboard and floating compact panel share one WebKit data
+store, IndexedDB queue, operation lease, Keychain owner session, and the existing
+Cloudflare API. Neither surface needs a browser tab or development server.
+The native bridge accepts only the known API paths and methods, blocks remote
+navigation/redirects, and handles native file dialogs, sounds, notifications,
+menu progress, and optional login registration. See [the Mac guide](macos.md).
+
 ## One app, two views
 
 Vigil uses React, TypeScript, and Vite. The full dashboard and compact view share a single sync engine. Chrome's floating Picture-in-Picture card renders through a React portal into a separate document, using the same engine and styles. Switching views preserves pending work.

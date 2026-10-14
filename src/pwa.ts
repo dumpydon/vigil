@@ -1,6 +1,8 @@
+import {isDesktop} from './desktop/bridge'
+
 export interface InstallEvent extends Event {prompt:()=>Promise<void>;userChoice:Promise<{outcome:'accepted'|'dismissed'}>}
 export async function registerPwa(onUpdate:(worker:ServiceWorker)=>void,signal:AbortSignal){
-  if(import.meta.env.DEV||!('serviceWorker'in navigator))return
+  if(isDesktop||import.meta.env.DEV||!('serviceWorker'in navigator))return
   const registration=await navigator.serviceWorker.register('/sw.js')
   if(signal.aborted)return
   if(registration.waiting)onUpdate(registration.waiting)

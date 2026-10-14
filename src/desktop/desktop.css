@@ -1,0 +1,166 @@
+/* All desktop overrides are scoped; the hosted website keeps its own layout. */
+html.desktop {
+  --content-scale:1; --ui-scale:1; zoom:1; font-size:16px;
+  background:transparent; --page:transparent; --surface:#111216; --raised:#23252b;
+  --desktop-tint:linear-gradient(180deg,rgba(0,0,0,.97) 0%,rgba(4,6,8,.94) 32%,rgba(9,13,16,.73) 62%,rgba(13,22,22,.28) 100%);
+  --track:#2c2f36; --muted:#8d919d; --secondary:#b0b4c0;
+  color-scheme:dark; overflow:hidden;
+}
+.desktop body {background:var(--desktop-tint);height:var(--desktop-height,100dvh)}
+.desktop button {min-height:32px;border-radius:9px;font-size:12px}
+.desktop .page {padding:0;min-height:var(--desktop-height,100dvh);height:var(--desktop-height,100dvh);overflow:hidden;background:transparent}
+.desktop .shell:not(.compact-shell) {width:100%;max-width:none;min-height:var(--desktop-height,100dvh);height:var(--desktop-height,100dvh);grid-template-columns:56px minmax(0,1fr);border:0;border-radius:0;background:transparent;box-shadow:none;overflow:hidden}
+.desktop .rail {height:var(--desktop-height,100dvh);position:relative;top:0;left:0;bottom:auto;width:56px;padding:20px 5px 12px;gap:10px;background:linear-gradient(180deg,#0506087a,#0b11112e);border-right:1px solid #ffffff14;grid-row:1;flex-direction:column;z-index:10}
+.desktop .rail>* {transform:none}
+.desktop .rail-brand-mark {width:27px;height:27px;margin:0 auto 16px}
+.desktop .rail button {width:44px;height:44px;min-height:44px;border-radius:13px;background:transparent;color:#a3a6b0}
+.desktop .rail button svg {width:22px;height:22px}
+.desktop .rail button:before {inset:0;border-radius:13px}
+.desktop .rail button.on {color:#ececff}
+.desktop .rail button.on:before {background:#818cf833;box-shadow:inset 0 0 0 1px #a5adff66}
+.desktop .rail-spacer {display:block;flex:1;min-height:20px}
+.desktop .rail-divider {margin:4px 6px;width:28px}
+.desktop .rail-tooltip {left:50px;top:12px;z-index:30}
+.desktop .rail .notification-dot {top:8px;right:8px;width:6px;height:6px}
+.desktop .workspace {min-width:0;height:var(--desktop-height,100dvh);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#ffffff20 transparent}
+.desktop .header {min-height:56px;padding:10px 22px;gap:5px;position:sticky;top:0;z-index:5;background:#0d0e11ee;backdrop-filter:blur(16px);border-bottom:1px solid #ffffff0b}
+.desktop .header .brand {font-size:13px;color:#b5bac6}
+.desktop .header .brand>span {font-size:1em}
+.desktop .header .brand img {width:22px;height:22px}
+.desktop .header .header-settings {display:none}
+.desktop .sync-status {font-size:11px;max-width:170px;overflow:hidden;text-overflow:ellipsis;min-height:28px}
+.desktop .sync-status i {width:5px;height:5px}
+.desktop .icon-button {width:30px;height:30px;min-height:30px}
+.desktop .desktop-pin {margin-left:8px}
+.desktop .desktop-pin.is-pinned {background:#818cf826;color:#b4baff}
+.desktop .section {padding:22px;border-color:#ffffff12}
+.desktop .section-heading {gap:10px;margin-bottom:14px}
+.desktop h1 {font-size:25px;font-weight:700;line-height:1.25;letter-spacing:-.035em}
+.desktop h2 {font-size:14px;line-height:1.4}
+.desktop .summary-title {gap:5px}
+.desktop .summary-date {font-size:13px;line-height:1.5;color:#b0b4c0}
+.desktop .shell:not(.compact-shell) .summary {padding-top:22px}
+.desktop .goal-edit {font-size:11px;min-height:26px;align-self:flex-start}
+.desktop .metric-line {margin:22px 0 18px;gap:10px}
+.desktop .metric {font-size:68px;line-height:.95;font-weight:700;letter-spacing:-.06em}
+.desktop .goal-value {font-size:14px;min-height:30px;background:transparent;padding:0;margin-left:2px}
+.desktop .remaining-top {margin-left:auto}
+.desktop .remaining-top strong {font-size:24px}
+.desktop .remaining-top span {font-size:11px}
+.desktop .remaining-progress {--progress-marker-half-width:.390625rem;padding-top:1.875rem}
+.desktop .progress-done {font-size:.78125rem;line-height:1.09375rem;bottom:calc(100% + .78125rem)}
+.desktop .progress-left-value {font-size:.9375rem;line-height:1.25rem}
+.desktop .remaining-progress .progress-marker {width:.78125rem;height:.46875rem}
+.desktop .logging .section-heading .small-button {font-size:11px}
+.desktop .logging .section-heading h2 span {display:none}
+.desktop .quick-row {padding:14px 15px;margin:10px 0;background:#15171c80;border:1px solid #ffffff0d;border-radius:13px}
+.desktop .quick-row.easy {background:linear-gradient(115deg,#818cf81f,#17181d55)}
+.desktop .quick-row.external {background:linear-gradient(115deg,#4fc5b31c,#17181d50)}
+.desktop .category-heading {margin-bottom:13px;gap:8px}
+.desktop .category-label {font-size:12px;gap:7px}
+.desktop .category-count {font-size:18px}
+.desktop .quick-actions {gap:7px}
+.desktop .increment {min-width:44px;min-height:34px;font-size:13px;background:#252830}
+.desktop .custom-button {min-width:60px;font-size:11px;min-height:34px;background:#ffffff09}
+.desktop .desktop-today :is(.day-history,.history-chart,.hourly,.recent) {display:none}
+.desktop .desktop-usage :is(.summary,.logging) {display:none}
+.desktop .desktop-today .workspace>.section:nth-of-type(n+4) {display:none}
+.desktop .desktop-insights h2 {font-size:13px}
+.desktop .desktop-insights .text-button {font-size:11px}
+.desktop .desktop-stat-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0}
+.desktop .desktop-stat-grid>div {display:flex;flex-direction:column;gap:7px;border-right:1px solid #ffffff12}
+.desktop .desktop-stat-grid>div:last-child {border:0}
+.desktop .desktop-stat-grid strong {font-size:23px;letter-spacing:-.02em}
+.desktop .desktop-stat-grid small {font-size:11px;font-weight:400;color:var(--muted)}
+.desktop .desktop-stat-grid span {font-size:11px;color:var(--muted)}
+.desktop .desktop-undo {padding:0;min-height:26px;color:var(--secondary)}
+.desktop .desktop-usage-heading {padding:22px 22px 0}
+.desktop .desktop-usage-heading h1 {font-size:18.75px}
+.desktop .desktop-usage-heading p {font-size:13px;color:var(--secondary);margin-top:5px}
+.desktop .chart-tooltip .chart-tooltip-total {font-size:.9rem;line-height:1.275rem}
+.desktop .segmented button {font-size:11px;padding:0 9px;min-height:29px}
+.desktop .legend {font-size:10px;gap:10px}
+.desktop .legend-hint {margin-left:auto}
+.desktop .entry-row {grid-template-columns:60px minmax(0,1fr) auto auto;font-size:11px;min-height:42px;padding:7px 0;column-gap:8px;row-gap:0}
+.desktop .entry-time {grid-column:1;grid-row:1;gap:2px}
+.desktop .entry-time time {font-size:10.5px;line-height:14px;white-space:nowrap}
+.desktop .entry-time span {font-size:9.5px;line-height:12px}
+.desktop .entry-detail {grid-column:2;grid-row:1;font-size:11.5px;line-height:15px;overflow-wrap:anywhere}
+.desktop .entry-detail small:empty {display:none}
+.desktop .entry-row>strong {grid-column:3;grid-row:1;font-size:12px;line-height:16px;min-width:22px}
+.desktop .entry-actions {grid-column:4;grid-row:1;justify-content:flex-end;align-items:center;flex-wrap:nowrap;gap:6px;margin:0}
+.desktop .entry-actions .text-button {min-height:28px;font-size:11px;padding:0 3px}
+.desktop .history-tools {flex-wrap:wrap;gap:9px}
+.desktop .history-tools input {font-size:11px;min-height:30px;padding:4px 6px}
+.desktop .history-tools label {font-size:11px}
+.desktop .period-columns,.desktop .period-row {font-size:10px;gap:10px}
+.desktop .period-total {font-size:12px}
+.desktop .app-footer {padding:15px 22px;font-size:9px;gap:8px;flex-wrap:wrap;line-height:1.7;color:#737986}
+.desktop .statistics strong {font-size:23px}
+.desktop .statistics span {font-size:10px}
+.desktop .modal {width:calc(100vw - 28px);max-width:450px;max-height:calc(100dvh - 28px);margin:auto;padding:22px;background:#181a20;box-shadow:0 20px 90px #0009;border:1px solid #ffffff24;border-radius:17px;zoom:1}
+.desktop .modal::backdrop {background:#0008;backdrop-filter:blur(5px)}
+.desktop .modal-heading {margin-bottom:20px}
+.desktop .modal h2 {font-size:17px}
+.desktop .modal h3 {font-size:13px}
+.desktop .modal input:not([type=checkbox]),.desktop .modal select {min-height:36px;font-size:13px}
+.desktop .modal label {font-size:12px}
+.desktop .modal .form-note,.desktop .settings-content p {font-size:12px;line-height:1.65}
+.desktop .modal .fine-print {font-size:10px;line-height:1.6}
+.desktop .preference-row {display:flex;align-items:center;justify-content:space-between;gap:18px;padding:12px 0;border-bottom:1px solid #ffffff0b;color:var(--text)}
+.desktop .preference-row span {display:flex;flex-direction:column;gap:3px;font-size:12px}
+.desktop .preference-row small {font-size:10px;line-height:1.4;color:var(--muted)}
+.desktop .preference-row input[type=checkbox] {appearance:auto;width:16px;height:16px;min-height:0;accent-color:#8d98ff}
+.desktop .preference-row select {min-height:30px;font-size:11px;background:var(--raised);color:var(--text);border:1px solid #ffffff14;border-radius:8px;max-width:145px;padding:4px 7px}
+.desktop .desktop-preferences .settings-actions {margin:14px 0 10px}
+.desktop .desktop-version {display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted);margin-top:16px}
+.desktop .desktop-version button {font-size:10px}
+.desktop .settings-content>section {padding:0 0 20px;margin:0 0 20px}
+.desktop .settings-content h3 {margin-bottom:7px}
+.desktop .settings-actions {gap:8px;flex-wrap:wrap}
+.desktop .settings-actions button {font-size:11px}
+.desktop .login-page {display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at top,#818cf819,transparent 65%)}
+.desktop .login-shell {max-width:370px;width:100%;margin:0;padding:32px;background:none;border:0;box-shadow:none}
+.desktop .login-shell>.brand {color:#a5adff;font-size:16px;margin-bottom:28px}
+.desktop .login-shell h1 {font-size:28px;margin-bottom:14px}
+.desktop .login-shell .form-note {font-size:13px;line-height:1.7;color:var(--secondary);margin-bottom:24px}
+.desktop .login-shell label {display:flex;flex-direction:column;gap:8px;font-size:12px}
+.desktop .login-shell input {min-height:40px;font-size:14px}
+.desktop .login-submit {min-height:40px;width:100%;margin-top:18px;background:#818cf8;color:#090a0e;font-weight:600}
+.desktop .login-shell .fine-print,.desktop .login-shell footer {font-size:10px;line-height:1.6;color:var(--muted);margin-top:16px}
+.desktop .toast {position:fixed;bottom:14px;left:70px;right:14px;max-width:none;transform:none;width:auto;font-size:11px;padding:12px 14px;z-index:50}
+.desktop .toast button {font-size:11px;min-height:24px}
+.desktop .desktop-demo {font-size:10px;text-align:center;background:#818cf818;color:#b7bfff;padding:8px;border-bottom:1px solid #818cf826}
+.desktop .alerts-panel {padding:22px}
+.desktop .alerts-title h1 {font-size:25px}
+.desktop .alert-card {padding:15px;font-size:12px}
+.desktop .alert-card h2 {font-size:13px}
+.desktop .alert-card p {font-size:12px;line-height:1.6}
+.desktop .connection-note,.desktop .draft-note,.desktop .update-note {font-size:11px;padding:10px 22px}
+.desktop .form-error {font-size:12px}
+.desktop-compact .compact-shell {width:100%;max-width:none;min-height:100dvh;border:0;border-radius:0;box-shadow:none;background:transparent}
+.desktop-compact .header {padding:8px 16px;min-height:48px;gap:7px}
+.desktop-compact .header-identity {display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.desktop-compact .header .brand {font-size:13px;gap:7px}
+.desktop-compact .header .brand img {width:18px;height:18px}
+.desktop-compact .header-identity .utc-date {font-size:10px;line-height:1.2;padding:0;margin:0}
+.desktop-compact .header .header-settings {display:inline-flex;width:26px;flex-shrink:0}
+.desktop-compact .sync-status {font-size:10px;max-width:115px}
+.desktop-compact .section {padding:16px}
+.desktop-compact .summary h1 {font-size:16px;letter-spacing:-.02em}
+.desktop-compact .metric-line {margin:14px 0 16px;gap:10px}
+.desktop-compact .metric {font-size:54px}
+.desktop-compact .goal-value {font-size:13px}
+.desktop-compact .logging .section-heading {display:none}
+.desktop-compact .quick-row {padding:11px 12px;margin:0 0 9px}
+.desktop-compact .category-heading {margin-bottom:10px}
+.desktop-compact .increment,.desktop-compact .custom-button {min-height:30px}
+.desktop-compact .compact-footer {padding:10px 16px 14px;gap:7px;border-top:1px solid #ffffff12}
+.desktop-compact .compact-footer button {font-size:10px;min-height:28px;padding:0 6px}
+.desktop-compact .toast {left:12px;right:12px;bottom:12px}
+.desktop-preview.desktop-compact {--desktop-height:min(506px,calc((100dvh - 64px) / .85))}
+.desktop-preview.desktop-compact #root {width:400px}
+.desktop-preview {--desktop-height:min(706px,calc((100dvh - 64px) / .85));overflow:auto!important}
+.desktop-preview body {height:100dvh;min-height:500px;display:grid;place-items:center;background:radial-gradient(ellipse at 20% 0%,#242844,transparent 55%),radial-gradient(ellipse at 100% 100%,#15352e,transparent 60%),#0a0c10;padding:32px 16px}
+.desktop-preview #root {width:500px;max-width:calc((100vw - 32px) / .85);height:var(--desktop-height);border:1px solid #ffffff2a;border-radius:18px;overflow:hidden;box-shadow:0 40px 90px #0008;transform:scale(.85);background:var(--desktop-tint);backdrop-filter:blur(28px) saturate(1.25);-webkit-backdrop-filter:blur(28px) saturate(1.25)}
+@media(prefers-reduced-motion:reduce){.desktop *{scroll-behavior:auto!important;transition:none!important}}

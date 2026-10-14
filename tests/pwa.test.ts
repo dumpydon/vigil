@@ -1,5 +1,7 @@
 import {afterEach,describe,expect,it,vi} from 'vitest'
 import {registerPwa} from '../src/pwa'
+import {readFile} from 'node:fs/promises'
+import {runInNewContext} from 'node:vm'
 
 afterEach(()=>{vi.unstubAllGlobals();vi.unstubAllEnvs()})
 
@@ -37,4 +39,18 @@ describe('PWA listener lifecycle',()=>{
     expect(registration.addEventListener).not.toHaveBeenCalled()
     expect(registration.update).not.toHaveBeenCalled()
   })
+})
+
+it('leaves public download pages outside the private tracker shell while preserving its offline navigation',async()=>{
+  const listeners=new Map<string,(event:unknown)=>void>(),network=vi.fn().mockResolvedValue(new Response('tracker'))
+  const source=(await readFile(new URL('../public/sw.js',import.meta.url),'utf8')).replace('__ASSETS__',JSON.stringify(['/index.html','/assets/app.js']))
+  runInNewContext(source,{self:{location:{origin:'https://vigil.example'},addEventListener:(name:string,listener:(event:unknown)=>void)=>listeners.set(name,listener)},URL,fetch:network})
+  const handler=listeners.get('fetch')!
+  for(const path of ['/download','/download/','/download/install.html','/download/previews/usage.html','/download/site.js','/api/snapshot']){
+    const respondWith=vi.fn();handler({request:{url:`https://vigil.example${path}`,method:'GET',mode:'navigate'},respondWith})
+    expect(respondWith).not.toHaveBeenCalled()
+  }
+  const respondWith=vi.fn();handler({request:{url:'https://vigil.example/compact',method:'GET',mode:'navigate'},respondWith})
+  expect(respondWith).toHaveBeenCalledOnce();expect(await (await respondWith.mock.calls[0][0]).text()).toBe('tracker')
+  expect(network).toHaveBeenCalledOnce()
 })

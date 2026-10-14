@@ -2,7 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(),{name:'apply-vigil-download-preview',configureServer(server){
+    server.middlewares.use((request,_response,next)=>{
+      if(request.url==='/download'||request.url?.startsWith('/download?'))request.url=request.url.replace('/download','/site/download/index.html')
+      else if(request.url?.startsWith('/download/'))request.url=request.url.replace('/download/','/site/download/')
+      next()
+    })
+  }}],
   server: { port: 5173, strictPort: true, proxy: { '/api': {
     target:'http://127.0.0.1:8787',changeOrigin:true,
     configure(proxy){proxy.on('proxyReq',(forward,request)=>{
