@@ -1,0 +1,104 @@
+name: Publish verified Mac beta
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing reviewed Mac release tag
+        required: true
+        default: macos-v1.0.0-beta.1
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Read release notes from the dispatch source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out the immutable release source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+          path: release-source
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: release-source/package-lock.json
+      - name: Validate the selected version
+        working-directory: release-source
+        run: |
+          node --input-type=module - <<'JS'
+          import {readFileSync} from 'node:fs'
+          const release=JSON.parse(readFileSync('macos/release-config.json','utf8'))
+          if(process.env.RELEASE_TAG!==`macos-v${release.version}`)throw new Error('The tag must match the bundled release version.')
+          JS
+      - run: npm ci
+        working-directory: release-source
+      - run: npm run lint && npm test && npm run build
+        working-directory: release-source
+      - name: Build both architectures and verify mounted DMGs and extracted ZIPs
+        run: npm run macos:package
+        working-directory: release-source
+      - name: Include the reviewed release notes
+        run: cp macos/release-notes.md release-source/output/releases/notes.md
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verified-mac-release
+          path: |
+            release-source/output/releases/*.dmg
+            release-source/output/releases/*.zip
+            release-source/output/releases/SHA512SUMS.txt
+            release-source/output/releases/release.json
+            release-source/output/releases/notes.md
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: verified-mac-release
+          path: release-assets
+      - name: Verify the exact files before publication
+        run: |
+          node --input-type=module - <<'JS'
+          import {readFileSync,readdirSync,appendFileSync} from 'node:fs'
+          import {createHash} from 'node:crypto'
+          const release=JSON.parse(readFileSync('release-assets/release.json','utf8'))
+          if(release.tag!==process.env.RELEASE_TAG||!/^\d+\.\d+\.\d+-beta\.\d+$/.test(release.version)||!release.localOnly||release.notarized||release.signing!=='ad-hoc')throw new Error('Invalid public beta manifest.')
+          const names=['arm64','x64'].flatMap(arch=>['dmg','zip'].map(extension=>`ApplyVigil-${release.version}-${arch}.${extension}`))
+          if(release.assets.length!==4||readdirSync('release-assets').sort().join('|')!==[...names,'SHA512SUMS.txt','release.json','notes.md'].sort().join('|'))throw new Error('Unexpected release files.')
+          for(const name of names){
+            const asset=release.assets.find(asset=>asset.file===name),data=readFileSync(`release-assets/${name}`)
+            if(!asset||asset.bytes!==data.length||asset.sha512!==createHash('sha512').update(data).digest('hex')||asset.url!==`https://github.com/${process.env.GITHUB_REPOSITORY}/releases/download/${release.tag}/${name}`)throw new Error('Release integrity check failed.')
+          }
+          const sums=release.assets.map(asset=>`${asset.sha512}  ${asset.file}`).join('\n')+'\n'
+          if(readFileSync('release-assets/SHA512SUMS.txt','utf8')!==sums)throw new Error('The checksum file does not match the manifest.')
+          appendFileSync(process.env.GITHUB_ENV,`RELEASE_VERSION=${release.version}\n`)
+          JS
+      - name: Publish the prerelease with its verified assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$RELEASE_TAG" release-assets/*.dmg release-assets/*.zip release-assets/SHA512SUMS.txt release-assets/release.json --repo "$GITHUB_REPOSITORY" --verify-tag --title "Apply Vigil $RELEASE_VERSION" --notes-file release-assets/notes.md --prerelease

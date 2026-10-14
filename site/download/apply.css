@@ -25,4 +25,4 @@ button{font-family:inherit}button:focus-visible,a:focus-visible,summary:focus-vi
 .block.split.usage-feature{width:min(1120px,calc(100vw - 48px));margin-inline:calc((100% - min(1120px,calc(100vw - 48px)))/2);grid-template-columns:minmax(0,1fr) 575px;gap:40px;padding-top:72px}
 .usage-feature .copy2 .lead{max-width:31ch}
 .usage-feature .stage.wtstage{max-width:575px!important}
-@media(max-width:1000px){.block.split.usage-feature{grid-template-columns:1fr;gap:26px;text-align:center;width:100%;margin-inline:0}.usage-feature .copy2 .lead{margin-inline:auto}.usage-feature .stage{margin-inline:auto}}
+@media(max-width:940px){.block.split.usage-feature{grid-template-columns:1fr;gap:26px;text-align:center;width:100%;margin-inline:0}.usage-feature .copy2 .lead{margin-inline:auto}.usage-feature .stage{margin-inline:auto}}
