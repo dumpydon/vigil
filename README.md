@@ -4,7 +4,9 @@ A job-application tracker for LinkedIn Easy Apply and external forms. Log what y
 
 **[Download Apply Vigil for Mac](https://vigil.dumpydon.workers.dev/download/)** · **[Mac releases](https://github.com/dumpydon/vigil/releases)** · **[Owner web workspace](https://vigil.dumpydon.workers.dev/)**
 
-<img src="docs/images/compact.jpg" alt="Vigil compact view with demonstration data" width="400">
+<a href="https://vigil.dumpydon.workers.dev/download/">
+  <img src="docs/images/apply-vigil-demo.gif" alt="Animated Apply Vigil Mac preview: menu bar, floating compact window, application counts, and a quiet progress alert on a glowing purple backdrop" width="1280">
+</a>
 
 <details>
 <summary>View the full dashboard</summary>
@@ -20,7 +22,7 @@ A job-application tracker for LinkedIn Easy Apply and external forms. Log what y
 
 </details>
 
-*Screenshots use demonstration data.*
+*Animated preview and screenshots use demonstration data.*
 
 ## What you can do
 
