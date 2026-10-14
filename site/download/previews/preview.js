@@ -3,6 +3,7 @@
   'use strict';
   const query=new URLSearchParams(location.search);
   const motion=matchMedia('(prefers-reduced-motion: reduce)');
+  if(query.get('scene')==='1')document.body.classList.add('logging-card');
   const state={easy:26,external:12,goal:75},initial={...state},undo=[];
   let toastTimer,tipTimer,storyTimers=[],usageController=null;
   const all=(selector,root=document)=>Array.from(root.querySelectorAll(selector));
@@ -12,6 +13,7 @@
   function render(){
     if(usageController){usageController.render();return}
     const total=state.easy+state.external,remaining=Math.max(0,state.goal-total);
+    if(document.body.classList.contains('logging-card')&&parent!==window)parent.postMessage({applyVigilLogging:{total,goal:state.goal}},location.origin);
     const values={...state,total,remaining,alltime:3114+total-38};
     all('[data-count]').forEach(el=>{el.textContent=number(values[el.dataset.count])});
     const completed=Math.min(100,total/state.goal*100),left=Math.max(0,100-completed),rounded=Math.round(left);
@@ -65,8 +67,50 @@
   if(query.get('sounds')==='1'){document.body.classList.add('sound-mode');one('.sound-panel')?.removeAttribute('hidden')}
   all('[data-sound]').forEach(b=>b.addEventListener('click',()=>{all('[data-sound]').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-checked',String(x===b))});one('[data-sound-label]').textContent=b.dataset.sound+' selected · visual preview'}));
   function reset(){Object.assign(state,initial);undo.length=0;if(usageController)usageController.reset();render();one('.demo-message')?.classList.remove('on');one('.virtual-cursor')?.classList.remove('on')}
-  function story(){if(motion.matches)return;storyTimers.forEach(clearTimeout);storyTimers=[];reset();const cursor=one('.virtual-cursor'),target=one('[data-add="easy"][data-amount="1"]');if(!cursor||!target)return;const r=target.getBoundingClientRect(),p=cursor.parentElement.getBoundingClientRect();cursor.style.left=(r.left-p.left+r.width/2)+'px';cursor.style.top=(r.top-p.top+r.height/2)+'px';storyTimers.push(setTimeout(()=>cursor.classList.add('on'),500),setTimeout(()=>{cursor.classList.add('click');add('easy',1)},1500),setTimeout(()=>cursor.classList.remove('click'),1700),setTimeout(()=>{const next=one('[data-add="external"][data-amount="2"]');if(!next)return;const n=next.getBoundingClientRect();cursor.style.left=(n.left-p.left+n.width/2)+'px';cursor.style.top=(n.top-p.top+n.height/2)+'px'},2600),setTimeout(()=>{cursor.classList.add('click');add('external',2)},3600),setTimeout(()=>cursor.classList.remove('click'),3800),setTimeout(()=>cursor.classList.remove('on'),4600))}
-  if(query.get('animate')==='1'&&!motion.matches){if(typeof IntersectionObserver==='function'){const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){story();observer.disconnect()}},{threshold:.2});observer.observe(one('.surface'))}else story()}
+  const interactiveStory=query.get('animate')==='1'&&query.get('tour')!=='1';
+  let storyInterrupted=false,storyStarted=false,storyObserver=null;
+  function stopStory(){
+    storyInterrupted=true;storyTimers.forEach(clearTimeout);storyTimers=[];storyObserver?.disconnect();
+    one('.virtual-cursor')?.classList.remove('on','click');all('.demo-highlight').forEach(el=>el.classList.remove('demo-highlight'));
+  }
+  function story(){
+    if(motion.matches||storyInterrupted||query.get('tour')==='1')return;
+    const surface=one('.surface'),cursor=one('.virtual-cursor'),first=one('[data-add="easy"][data-amount="1"]');
+    if(!surface||!cursor||!first)return;
+    storyStarted=true;document.body.classList.add('interactive-demo');storyTimers.forEach(clearTimeout);storyTimers=[];
+    // Translate to the surface's own coordinates, including its compact scale.
+    function point(target,dx=0,dy=0){
+      const rect=target.getBoundingClientRect(),bounds=surface.getBoundingClientRect(),scale=surface.offsetWidth/bounds.width;
+      cursor.style.left=((rect.left-bounds.left+rect.width/2)*scale+dx)+'px';
+      cursor.style.top=((rect.top-bounds.top+rect.height/2)*scale+dy)+'px';
+    }
+    function later(delay,action){storyTimers.push(setTimeout(action,delay))}
+    function press(target){cursor.classList.add('click');target.classList.add('demo-highlight');add(target.dataset.add,Number(target.dataset.amount))}
+    function release(){cursor.classList.remove('click');all('.demo-highlight').forEach(el=>el.classList.remove('demo-highlight'))}
+    point(first,36,-58);
+    later(300,()=>cursor.classList.add('on'));
+    later(800,()=>point(first));
+    later(1650,()=>press(first));later(1900,release);
+    const next=one('[data-add="external"][data-amount="2"]');
+    if(next){later(2600,()=>point(next));later(3450,()=>press(next));later(3700,release)}
+    later(4700,()=>cursor.classList.remove('on'));
+  }
+  if(interactiveStory){
+    // A visitor takes over permanently on the first input. Never reset their counts.
+    ['pointerdown','pointermove','wheel','touchstart','keydown'].forEach(type=>document.addEventListener(type,event=>{if(event.isTrusted)stopStory()},{capture:true,passive:true}));
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)stopStory()});
+    motion.addEventListener('change',()=>{if(motion.matches)stopStory()});
+    if(!motion.matches){
+      if(typeof IntersectionObserver==='function'){
+        storyObserver=new IntersectionObserver(entries=>{
+          const entry=entries[0];
+          if(entry.intersectionRatio>=.35&&!storyStarted&&!document.hidden)story();
+          else if(storyStarted&&!entry.isIntersecting)stopStory();
+        },{threshold:[0,.35]});
+        storyObserver.observe(one('.surface'));
+      }else story();
+    }
+  }
   // Optional same-origin parent orchestration for the landing page's cinematic hero.
   addEventListener('message',event=>{if(event.source!==parent||event.origin!==location.origin)return;const data=event.data?.applyVigilPreview;if(!data||typeof data!=='object')return;if(data.action==='reset')reset();else if(data.action==='play')story();else if(data.action==='add')add(data.category,data.amount);else if(data.action==='tooltip'){usageController?.tooltip('2026-10-09')}else if(data.action==='alert')message('Sample goal update · 38 of 75 today');else if(data.action==='tour')renderTour(data);else if(data.action==='tour-pause'&&query.get('tour')==='1')document.body.classList.add('tour-paused')});
 
