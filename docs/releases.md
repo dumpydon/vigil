@@ -32,8 +32,9 @@ Output under `output/releases/`:
 - `ApplyVigil-1.0.0-beta.1-x64.dmg` and `.zip`
 - `SHA512SUMS.txt` and `release.json`
 
-The two-target build updates tracked `site/download/release.json`. Never edit
-checksums by hand. A partial CI target does not overwrite that manifest.
+Local builds write metadata only under `output/releases/`. They never overwrite
+the published site manifest. After publishing, copy the actual GitHub release
+manifest into `site/download/release.json`. Never edit checksums by hand.
 
 Native GUI smoke checks use separate test bundle IDs and nonpersistent WebKit
 stores. The local test verifies a fresh workspace without sign-in, durable local
