@@ -37,3 +37,16 @@ button{font-family:inherit}button:focus-visible,a:focus-visible,summary:focus-vi
 .usage-feature .copy2 h2{text-wrap:wrap}
 .usage-feature .stage.wtstage{max-width:575px!important}
 @media(max-width:940px){.block.split.usage-feature{grid-template-columns:1fr;gap:26px;text-align:center;width:100%;margin-inline:0}.usage-feature .copy2 .lead{margin-inline:auto}.usage-feature .stage{margin-inline:auto}}
+.first-open-link{display:inline-block;margin-top:10px;font-size:11.5px;font-weight:500;color:#a5b4fc;text-underline-offset:4px}
+.first-open-link:hover{text-decoration:underline;color:#c7d2fe}
+.block.split.install-feature{grid-template-columns:minmax(0,.84fr) minmax(0,1.16fr);gap:44px;padding-top:72px;align-items:center;scroll-margin-top:92px}
+.install-feature h2{font-size:clamp(29px,3.4vw,43px);line-height:1.1}
+.install-feature .lead{font-size:15px;line-height:1.65;max-width:40ch}
+.launch-route{padding-left:20px;margin:19px 0 16px;color:#989ba7;font-size:12px;line-height:1.65;text-align:left}
+.launch-route li{padding-left:4px;margin-top:10px}.launch-route li::marker{color:#818cf8;font-weight:700}.launch-route b{color:#d5d9e5;font-weight:600}
+.launch-guide-link{font-size:12px;font-weight:600;color:#a5b4fc;text-underline-offset:4px}.launch-guide-link:hover{text-decoration:underline}
+.launch-caution{font-size:10px!important;line-height:1.6!important;color:#777f8e!important;margin-top:15px!important;max-width:44ch}
+.launch-caution a{color:#a0a8bf;text-decoration:underline;text-underline-offset:3px}
+.launch-player-shell{min-width:0;border:1px solid #ffffff1c;border-radius:18px;overflow:hidden;background:#0c0e13;box-shadow:0 25px 100px #0005,0 -12px 80px #818cf809}
+.launch-player-frame{display:block;border:0;width:100%;height:540px;background:#0c0e13}
+@media(max-width:940px){.block.split.install-feature{grid-template-columns:1fr;gap:30px;padding-top:72px}.install-feature .copy2{max-width:560px;margin-inline:auto;text-align:center}.install-feature .lead,.launch-caution{margin-inline:auto}.launch-route{max-width:420px;margin-inline:auto}.launch-player-shell{width:100%;max-width:680px;margin-inline:auto}}

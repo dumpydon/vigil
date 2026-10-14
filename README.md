@@ -50,6 +50,31 @@ app to Applications, and follow the first-open guide if macOS requests approval.
 The beta is ad-hoc signed and not notarized. macOS 13+ is required. The Intel
 bundle is compiled and verified; physical Intel runtime testing is still pending.
 
+### First launch on macOS
+
+The beta is not notarized by Apple. If you trust the download and macOS shows an
+**unverified-app or unidentified-developer** warning:
+
+1. Keep Apply Vigil in **Applications**. Dismiss the warning with **Done** (or Cancel / OK), rather than Move to Bin/Trash.
+2. Open **System Settings → Privacy & Security**, then scroll down to **Security**.
+3. Find Apply Vigil’s blocked-app notice and choose **Open Anyway**. Some macOS versions show **Open** first.
+4. Confirm **Open** and authenticate on your Mac if requested. Look for Apply Vigil in the **menu bar**, not the Dock.
+
+Keep Gatekeeper enabled. For a **damaged-app or malware warning**, stop and contact us.
+[Full illustrated install guide](https://vigil.dumpydon.workers.dev/download/install.html) ·
+[Apple’s first-launch guidance](https://support.apple.com/en-us/102445)
+
+<details>
+<summary>Watch the 15-second installation walkthrough</summary>
+
+<a href="https://vigil.dumpydon.workers.dev/download/first-launch.html">
+  <img src="docs/images/first-launch.gif" alt="Illustrated macOS install guide: drag Apply Vigil into Applications, dismiss the unverified-app warning, choose Open Anyway in Privacy & Security, and confirm opening" width="960">
+</a>
+
+*Illustration; wording and authentication can vary by macOS version.*
+
+</details>
+
 The connected owner build remains a separate flavor. Developers can build both:
 
 ```sh
