@@ -33,7 +33,7 @@
 
 Log LinkedIn Easy Apply and external/form applications separately. Counts are entered manually; Vigil does not apply for you or access your LinkedIn account.
 
-## First launch on Mac
+## First launch on macOS
 
 The beta is ad-hoc signed and **not notarized by Apple**. If macOS blocks the first open, follow the [15-second illustrated guide](https://vigil.dumpydon.workers.dev/download/first-launch.html).
 
