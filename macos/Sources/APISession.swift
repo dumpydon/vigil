@@ -1,5 +1,4 @@
 import Foundation
-import Security
 
 enum DesktopError: LocalizedError {
     case message(String)
@@ -9,6 +8,9 @@ enum DesktopError: LocalizedError {
 // The web view can request only existing workspace APIs, never arbitrary URLs.
 enum APIBoundary {
     static let origin = URL(string: "https://vigil.dumpydon.workers.dev")!
+    static func websiteURL(localOnly: Bool) -> URL {
+        localOnly ? origin : origin.appendingPathComponent("dashboard", isDirectory: true)
+    }
     static func allows(_ path: String, method: String) -> Bool {
         guard path.hasPrefix("/api/"), !path.contains(".."), !path.contains("#"), !path.contains("\\") else { return false }
         let parts = path.components(separatedBy: "?")
@@ -27,52 +29,26 @@ enum APIBoundary {
     }
 }
 
-private struct OwnerSession: Codable {
+private struct OwnerSession {
     let token: String
     let expiresAt: Date
 }
 
 @MainActor final class APISession: NSObject, URLSessionTaskDelegate {
-    private let service = "dev.dumpydon.ApplyVigil.owner-session"
-    private let account = "vigil.dumpydon.workers.dev"
+    // Deliberately process-only: never access Keychain or persist credentials.
+    // Both native windows share this instance while the connected app is open.
     private var owner: OwnerSession?
-    private lazy var session: URLSession = {
-        let configuration = URLSessionConfiguration.ephemeral
+    private let configuration: URLSessionConfiguration
+    private lazy var session = URLSession(configuration: configuration, delegate: self, delegateQueue: .main)
+
+    init(configuration: URLSessionConfiguration = .ephemeral) {
+        self.configuration = configuration
         configuration.httpCookieStorage = nil
         configuration.httpShouldSetCookies = false
         configuration.urlCache = nil
         configuration.timeoutIntervalForRequest = 15
         configuration.timeoutIntervalForResource = 20
-        return URLSession(configuration: configuration, delegate: self, delegateQueue: .main)
-    }()
-
-    override init() {
         super.init()
-        var query = keyQuery
-        query[kSecReturnData as String] = true
-        query[kSecMatchLimit as String] = kSecMatchLimitOne
-        var result: CFTypeRef?
-        if SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess, let data = result as? Data {
-            owner = try? JSONDecoder().decode(OwnerSession.self, from: data)
-        }
-    }
-    private var keyQuery: [String: Any] {
-        [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: account]
-    }
-    private func retain(_ value: OwnerSession?) throws {
-        if let value {
-            let encoded = try JSONEncoder().encode(value)
-            let attributes: [String: Any] = [kSecValueData as String: encoded, kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly]
-            let status = SecItemUpdate(keyQuery as CFDictionary, attributes as CFDictionary)
-            if status == errSecItemNotFound {
-                let addStatus = SecItemAdd(keyQuery.merging(attributes) { _, new in new } as CFDictionary, nil)
-                guard addStatus == errSecSuccess else { throw DesktopError.message("macOS could not retain your session in Keychain. Try signing in again.") }
-            } else if status != errSecSuccess { throw DesktopError.message("macOS could not update your session in Keychain.") }
-        } else {
-            let status = SecItemDelete(keyQuery as CFDictionary)
-            guard status == errSecSuccess || status == errSecItemNotFound else { throw DesktopError.message("macOS could not remove the expired session from Keychain.") }
-        }
-        owner = value
     }
     func request(path: String, method: String, body: String?) async throws -> [String: Any] {
         guard APIBoundary.allows(path, method: method), let url = URL(string: path, relativeTo: APIBoundary.origin)?.absoluteURL,
@@ -97,9 +73,9 @@ private struct OwnerSession: Codable {
             guard let cookie = HTTPCookie.cookies(withResponseHeaderFields: headers, for: APIBoundary.origin).first(where: { $0.name == "__Host-vigil_session" }),
                   cookie.value.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil,
                   let expires = cookie.expiresDate else { throw DesktopError.message("The workspace did not return a valid owner session.") }
-            try retain(OwnerSession(token: cookie.value, expiresAt: expires))
+            owner = OwnerSession(token: cookie.value, expiresAt: expires)
         } else if (path == "/api/logout" && response.statusCode == 200) || response.statusCode == 401 {
-            try retain(nil)
+            owner = nil
         }
         return ["status": response.statusCode, "body": text]
     }

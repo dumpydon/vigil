@@ -1,5 +1,5 @@
 import { openDB, type IDBPDatabase, type DBSchema } from 'idb'
-import { DEFAULT_GOAL, FIRST_DAY, goalFor, shiftDay, utcDay, validateMutation, type DayEntry, type Entry, type Mutation, type MutationResult, type Snapshot } from '../../shared/model'
+import { goalFor, shiftDay, utcDay, validateMutation, type DayEntry, type Entry, type Mutation, type MutationResult, type Snapshot } from '../../shared/model'
 import {desktopFetcher,isNative,isDesktopPreview,isLocalOnly} from '../desktop/bridge'
 import {previewFetcher} from '../desktop/preview'
 import {endpoint,project,replaceGoal} from './operations'
@@ -306,4 +306,3 @@ export class SyncEngine {
 export const engine=new SyncEngine(isLocalOnly?{name:'apply-vigil-local-cache-v1',fetcher:new LocalWorkspace().fetcher,localOnly:true}:isNative?{fetcher:desktopFetcher}:isDesktopPreview?{name:'apply-vigil-isolated-preview',fetcher:previewFetcher()}: {})
 // Storage/sync code needs a clean instance on a development update. Durable state survives reload.
 if(import.meta.hot)import.meta.hot.accept(()=>location.reload())
-export function emptySnapshot(day=utcDay()):Snapshot{return {entries:[],policies:[{date:FIRST_DAY,value:DEFAULT_GOAL}],overrides:[],trackingStart:day,revision:0,goalRevision:0,serverNow:new Date().toISOString()}}

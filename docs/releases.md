@@ -1,7 +1,7 @@
 # Apply Vigil public Mac releases
 
-The first public beta is `1.0.0-beta.1` (tag `macos-v1.0.0-beta.1`, bundle version
-2), local-only, ad-hoc signed, and requires macOS 13+. Releases are public at
+The current public beta is `1.0.0-beta.2` (tag `macos-v1.0.0-beta.2`, bundle version
+3), local-only, ad-hoc signed, and requires macOS 13+. Releases are public at
 <https://github.com/dumpydon/vigil/releases>. Public installers must use the
 `.Local` bundle identity and must never contain credentials or personal records.
 
@@ -28,8 +28,8 @@ permission-preserving ZIPs, and verifies disk-image checksums.
 
 Output under `output/releases/`:
 
-- `ApplyVigil-1.0.0-beta.1-arm64.dmg` and `.zip`
-- `ApplyVigil-1.0.0-beta.1-x64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.2-arm64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.2-x64.dmg` and `.zip`
 - `SHA512SUMS.txt` and `release.json`
 
 Local builds write metadata only under `output/releases/`. They never overwrite
@@ -68,7 +68,7 @@ coverage.
    the CI binaries and deploy that manifest on the site. Download the public
    assets anonymously and compare SHA-512 values to the manifest. Mount each DMG read-only, inspect its app, and verify the signature
    and executable architecture. Check the ZIP's executable permissions.
-5. Verify `/download/`, installation guide, tour, preview scrolling, sound samples,
+5. Verify `/` and the `/download/` redirect, installation guide, tour, preview scrolling, sound samples,
    architecture picker and direct download. Confirm `/api/snapshot` still rejects
    unauthenticated requests and the owner tracker still opens normally.
 

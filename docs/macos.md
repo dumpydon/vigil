@@ -7,7 +7,7 @@ Two separate flavors share the interface:
 - **Public local beta:** `dev.dumpydon.ApplyVigil.Local`, starts empty without an
   account, stores records on the Mac, and never calls the owner API.
 - **Connected owner build:** `dev.dumpydon.ApplyVigil`, retains the existing
-  Cloudflare workspace, Keychain session and offline queue.
+  Cloudflare workspace and offline queue.
 
 Public downloads: <https://vigil.dumpydon.workers.dev/>. The connected
 owner installation stays separate and is not silently replaced by public builds.
@@ -39,10 +39,14 @@ The dashboard is 425 × 600 points at an 85% interface scale, close to the Vigil
 reference app's proportions.
 
 The public beta needs no sign-in and labels saved data **On this Mac**.
-For the connected build, sign in with the web workspace's current owner password. This app has a separate
-session from Safari and Chrome. The server-issued session is retained in
-Keychain for its server-defined lifetime (up to 90 days); the app never retains
-the owner password. Password resets revoke older sessions.
+For the connected build, sign in with the web workspace's current owner password.
+Starting with **1.0.0-beta.2**, the development connected build keeps the server-issued token only in
+native process memory. It does not access Keychain or save credentials to disk;
+quitting ends the app's login, so reopening requires an owner sign-in to sync.
+Records, drafts and pending operations remain in their existing durable store.
+The app never retains the owner password. Password resets revoke older sessions.
+Previously installed connected builds use Keychain until their app bundle is
+replaced; changing repository source does not update those installed copies.
 
 - **Today:** current UTC goal, remaining count, Easy Apply/external quick buttons,
   custom and mixed batches, goal changes, progress statistics, and undo.
@@ -144,10 +148,14 @@ npm run build
 
 ## Files and privacy
 
-- App: `/Applications/Apply Vigil.app`.
+- App: `/Applications/Apply Vigil.app`. Rebuild and install commands refuse to
+  replace a running bundle. Installation keeps the previous app under
+  `~/Library/Application Support/ApplyVigilBackups/` for rollback.
 - Bundle identity / preferences domain: `dev.dumpydon.ApplyVigil` (connected),
   `dev.dumpydon.ApplyVigil.Local` (public).
-- Keychain generic-password service: `dev.dumpydon.ApplyVigil.owner-session`.
+- Older connected builds used the Keychain service
+  `dev.dumpydon.ApplyVigil.owner-session`. The current version neither reads,
+  writes nor deletes that legacy item.
 - WebKit cache: the system-managed data store for this bundle, typically under
   `~/Library/WebKit/dev.dumpydon.ApplyVigil/` and its application-support data.
 - Preferences and delivered-alert receipts: this app's UserDefaults domain.
@@ -155,7 +163,7 @@ npm run build
 Only the connected build uses the existing Cloudflare service for records.
 The public build uses `apply-vigil-device-records-v1` and
 `apply-vigil-local-cache-v1` IndexedDB databases in its separate WebKit store,
-never creates a Keychain owner session, and blocks native API requests. It adds no
+has no owner session, and blocks native API requests. It adds no
 telemetry, localhost listener, agent-account scanning, or new backend. Its bridge
 allows only the existing workspace API routes, rejects redirects, and keeps
 cookies out of JavaScript. Only the bundled local page can call it; remote
@@ -163,8 +171,8 @@ navigation is blocked. Native files use standard open/save panels.
 
 To remove the app, sync pending work and export a backup first, quit, disable
 Launch at login if enabled, and move Apply Vigil.app to Trash. Cached data and
-the Keychain session are intentionally retained unless you explicitly remove
-them. Removing storage before syncing can lose pending records.
+any Keychain item from an older build remain unless you explicitly remove them.
+Removing storage before syncing can lose pending records.
 
 ## Public distribution
 

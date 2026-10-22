@@ -103,7 +103,7 @@ export function validateMutation(input: unknown, today: Day): Mutation {
     case 'day': {
       assertDay(op.date,today); assertCount(op.easy); assertCount(op.external); assertUuid(op.additionId); assertIso(op.loggedAt)
       if(utcDay(new Date(op.loggedAt))>today||!Array.isArray(op.expected)||op.expected.length>1000)throw new ValidationError('Invalid day adjustment.')
-      const expected=op.expected.map(e=>{assertUuid(e.id);positiveVersion(e.version);counts(e.easy,e.external);assertIso(e.loggedAt);return {id:e.id,version:e.version,easy:e.easy,external:e.external,loggedAt:e.loggedAt}})
+      const expected=op.expected.map(e=>{if(!e||typeof e!=='object')throw new ValidationError('Invalid day adjustment entry.');assertUuid(e.id);positiveVersion(e.version);counts(e.easy,e.external);assertIso(e.loggedAt);return {id:e.id,version:e.version,easy:e.easy,external:e.external,loggedAt:e.loggedAt}})
       if(new Set(expected.map(e=>e.id)).size!==expected.length||expected.some(e=>e.id===op.additionId))throw new ValidationError('Duplicate adjustment entry IDs.')
       return {id:op.id,type:'day',date:op.date,easy:op.easy,external:op.external,expected,additionId:op.additionId,loggedAt:op.loggedAt}
     }

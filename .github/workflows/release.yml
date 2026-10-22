@@ -6,7 +6,7 @@ on:
       tag:
         description: Existing reviewed Mac release tag
         required: true
-        default: macos-v1.0.0-beta.1
+        default: macos-v1.0.0-beta.2
         type: string
 
 permissions:
@@ -49,6 +49,8 @@ jobs:
       - run: npm ci
         working-directory: release-source
       - run: npm run lint && npm test && npm run build
+        working-directory: release-source
+      - run: npm run macos:test:session
         working-directory: release-source
       - name: Build both architectures and verify mounted DMGs and extracted ZIPs
         run: npm run macos:package

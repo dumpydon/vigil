@@ -170,7 +170,7 @@ private enum AlertSound: String, CaseIterable {
     func popoverShouldClose(_ popover: NSPopover) -> Bool { !fileDialogOpen }
     @objc private func openPanel() { showPanel() }
     @objc private func openSettings() { showPanel(page: "settings") }
-    @objc private func openWebsite() { NSWorkspace.shared.open(localOnly ? APIBoundary.origin.appendingPathComponent("download") : APIBoundary.origin) }
+    @objc private func openWebsite() { NSWorkspace.shared.open(APIBoundary.websiteURL(localOnly: localOnly)) }
     @objc private func togglePin() { pinned.toggle() }
     @objc private func didWake() { refresh() }
     private func refresh() { if webReady { dispatch("refresh", NSNull()) } }
@@ -253,7 +253,7 @@ private enum AlertSound: String, CaseIterable {
             guard !localOnly else { throw DesktopError.message("This local app does not connect to an owner account.") }
             apiRequests += 1
             guard let path = data["path"] as? String, let method = data["method"] as? String else { throw DesktopError.message("Incomplete API request.") }
-            if smokeTest { return try mockRequest(path: path, method: method, body: data["body"] as? String) }
+            if smokeTest { return try smokeRequest(path: path, method: method, body: data["body"] as? String) }
             return try await api.request(path: path, method: method, body: data["body"] as? String)
         case "status": updateStatus(data); return true
         case "settings": return await settings()
@@ -370,7 +370,6 @@ private enum AlertSound: String, CaseIterable {
 
     // Native smoke checks are implemented separately and never contact production.
     private func startSmokeTest() { if localOnly { runLocalSmokeChecks() } else { runSmokeChecks() } }
-    private func mockRequest(path: String, method: String, body: String?) throws -> [String: Any] { try smokeRequest(path: path, method: method, body: body) }
 
     private func smokeRequest(path: String, method: String, body: String?) throws -> [String: Any] {
         guard APIBoundary.allows(path, method: method) else { throw DesktopError.message("Blocked test request") }

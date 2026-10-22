@@ -4,6 +4,7 @@ import {mkdir,readFile,writeFile,copyFile,rm,rename} from 'node:fs/promises'
 import {execFileSync} from 'node:child_process'
 import {fileURLToPath} from 'node:url'
 import path from 'node:path'
+import {processesForApp} from './macos-processes.mjs'
 
 const root=fileURLToPath(new URL('../',import.meta.url))
 const release=JSON.parse(await readFile(path.join(root,'macos/release-config.json'),'utf8'))
@@ -17,6 +18,7 @@ const name=test?(local?'Apply Vigil Local Tests':'Apply Vigil Tests'):'Apply Vig
 const output=path.join(root,'output/macos',local&&!test?`local-${architecture}`:'')
 const staging=path.join(output,`${name}.staging.app`)
 const app=path.join(output,`${name}.app`)
+if(processesForApp(app).length)throw new Error(`Quit ${app} before rebuilding it. Its retained records will not be removed.`)
 const resources=path.join(staging,'Contents/Resources')
 const web=path.join(resources,'web')
 const run=(executable,args)=>execFileSync(executable,args,{cwd:root,stdio:'inherit'})
@@ -38,7 +40,7 @@ const iconset=path.join(output,'AppIcon.iconset')
 await mkdir(iconset,{recursive:true})
 run('/usr/bin/xcrun',['swift',path.join(root,'macos/GenerateIcon.swift'),iconset])
 run('/usr/bin/iconutil',['-c','icns',iconset,'-o',path.join(resources,'AppIcon.icns')])
-run('/usr/bin/xcrun',['swiftc','-O','-parse-as-library','-swift-version','5','-target',`${architecture}-apple-macos13.0`,'-framework','AppKit','-framework','WebKit','-framework','Security','-framework','UserNotifications','-framework','ServiceManagement','-framework','UniformTypeIdentifiers','macos/Sources/APISession.swift','macos/Sources/main.swift','-o',path.join(staging,'Contents/MacOS/ApplyVigil')])
+run('/usr/bin/xcrun',['swiftc','-O','-parse-as-library','-swift-version','5','-target',`${architecture}-apple-macos13.0`,'-framework','AppKit','-framework','WebKit','-framework','UserNotifications','-framework','ServiceManagement','-framework','UniformTypeIdentifiers','macos/Sources/APISession.swift','macos/Sources/main.swift','-o',path.join(staging,'Contents/MacOS/ApplyVigil')])
 run('/usr/bin/plutil',['-lint',path.join(staging,'Contents/Info.plist')])
 run('/usr/bin/codesign',['--force','--sign','-','--timestamp=none',staging])
 run('/usr/bin/codesign',['--verify','--deep','--strict',staging])

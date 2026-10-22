@@ -1,5 +1,5 @@
 import { describe,expect,it } from 'vitest'
-import { analytics, assertDay, goalFor, hourlyFor, parseCount, shiftDay, utcDay, validateBackup, validateMutation, type Entry, type Snapshot } from '../shared/model'
+import { analytics, assertDay, goalFor, hourlyFor, parseCount, shiftDay, utcDay, validateBackup, validateMutation, ValidationError, type Entry, type Snapshot } from '../shared/model'
 const today='2026-10-07'
 const entry=(date:string,easy:number,external:number):Entry=>({id:crypto.randomUUID(),date,easy,external,loggedAt:date+'T11:00:00.000Z',createdAt:date+'T11:00:00.000Z',updatedAt:date+'T11:00:00.000Z',version:1,deleted:false,backdated:false})
 const fixture:Snapshot={entries:[[46,22],[52,23],[57,25],[38,21],[51,25],[53,27],[25,12]].map(([a,b],i)=>entry(`2026-10-0${i+1}`,a,b)),policies:[{date:'1970-01-01',value:75}],overrides:[],trackingStart:'2026-10-01',revision:0,goalRevision:0,serverNow:today+'T11:00:00.000Z'}
@@ -12,6 +12,12 @@ describe('UTC and goal analytics',()=>{
   it('uses logging timestamps rather than fabricating backdated submission hours',()=>{const e={...entry('2026-10-01',2,3),loggedAt:today+'T11:00:00.000Z',backdated:true};const s={...fixture,entries:[e]};expect(hourlyFor(s,today).hours[11]).toBe(5);expect(hourlyFor(s,today).backdated).toBe(5);expect(hourlyFor(s,'2026-10-01').hours.reduce((a,b)=>a+b,0)).toBe(0);expect(hourlyFor(s,'2026-10-01').otherDates).toBe(5)})
 })
 describe('validation',()=>{
+  it('reports malformed day adjustment entries as validation errors instead of crashing',()=>{
+    for(const value of [null,undefined,3,'entry',false]){
+      const op={id:crypto.randomUUID(),type:'day',date:today,easy:1,external:0,expected:[value],additionId:crypto.randomUUID(),loggedAt:today+'T12:00:00.000Z'}
+      expect(()=>validateMutation(op,today)).toThrow(ValidationError)
+    }
+  })
   it.each(['-1','1.2','1e3','Infinity','+5','','NaN','10001'])('rejects malformed or excessive form count %s',value=>expect(()=>parseCount(value,1)).toThrow())
   it('rejects impossible dates and future assigned days',()=>{expect(()=>assertDay('2026-02-30',today)).toThrow();expect(()=>assertDay('2026-10-08',today)).toThrow();expect(()=>assertDay('1969-12-31',today)).toThrow()})
   it('retains a queued goal intent across midnight but rejects a new historical future-default edit',()=>{const op={id:crypto.randomUUID(),type:'goal',date:today,value:100,future:true,expectedRevision:0,loggedAt:today+'T23:59:59.000Z'};expect(()=>validateMutation(op,'2026-10-08')).not.toThrow();expect(()=>validateMutation({...op,loggedAt:'2026-10-08T00:00:00.000Z'},'2026-10-08')).toThrow()})
