@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0-beta.1",
-  "tag": "macos-v1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
+  "tag": "macos-v1.0.0-beta.2",
   "minimumMacOS": "13.0",
   "localOnly": true,
   "signing": "ad-hoc",
@@ -8,31 +8,31 @@
   "assets": [
     {
       "architecture": "arm64",
-      "file": "ApplyVigil-1.0.0-beta.1-arm64.dmg",
-      "bytes": 1327431,
-      "sha512": "23dc79ba3f11139301ed416735cb3d205d3cc68ac24d035bceb7165405263cf7c7aa545935fe07629208979a52cd3bec9e22039d0d003e12f2a64b45dbb1fbc8",
-      "url": "https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.1/ApplyVigil-1.0.0-beta.1-arm64.dmg"
+      "file": "ApplyVigil-1.0.0-beta.2-arm64.dmg",
+      "bytes": 1319471,
+      "sha512": "7d18fc65d1309c30c0c3ad586e77e0a335a5de0a678c6c55057d79f7ace4e1439050d7d289e544c795a12253750123abf0f182d24dc8ee0ce7888b2dbda446ac",
+      "url": "https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.2/ApplyVigil-1.0.0-beta.2-arm64.dmg"
     },
     {
       "architecture": "arm64",
-      "file": "ApplyVigil-1.0.0-beta.1-arm64.zip",
-      "bytes": 739533,
-      "sha512": "fa33d21f523ae0a37e8f1cfde1312011dde414f4baadc7703ecc8ac35cac06c3978fd59c4b67888c8d21d42028fb366e0d1890a731e63608f957b84b4d87db29",
-      "url": "https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.1/ApplyVigil-1.0.0-beta.1-arm64.zip"
+      "file": "ApplyVigil-1.0.0-beta.2-arm64.zip",
+      "bytes": 732667,
+      "sha512": "1671151008285487cec7cc449732803d5e80c9b64d850dbd2dcbe3fa87f580f2c27c3d80b6a42da4b7ea41d19f0b7bd80c007f214b008477d49599ca4dc0fdab",
+      "url": "https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.2/ApplyVigil-1.0.0-beta.2-arm64.zip"
     },
     {
       "architecture": "x64",
-      "file": "ApplyVigil-1.0.0-beta.1-x64.dmg",
-      "bytes": 1334767,
-      "sha512": "592b21e6521c432a09f37478cf551458288ff703b9b4f5749b09cdd77183bd16ada34f9341879a5c978597c3401525371705d6ee4d7572f77e6a210feec2a565",
-      "url": "https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.1/ApplyVigil-1.0.0-beta.1-x64.dmg"
+      "file": "ApplyVigil-1.0.0-beta.2-x64.dmg",
+      "bytes": 1326689,
+      "sha512": "e48685edcadd740bb8ef21dce29d23910f704d1f8968683af5393b1f8d6cd3fc0b9b74f59e08ce0c536c5336001720712aa02e38f8ccb7ce91ab7e72133e3199",
+      "url": "https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.2/ApplyVigil-1.0.0-beta.2-x64.dmg"
     },
     {
       "architecture": "x64",
-      "file": "ApplyVigil-1.0.0-beta.1-x64.zip",
-      "bytes": 745753,
-      "sha512": "b8610fd8ec233dc214d6006d37164bc28706fb7cc5cbed41c656001db8dac7034da1a147d64b0acc34cae67d3d46c6acd191f37d036e4b3ab7cd530ee2cb1fdf",
-      "url": "https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.1/ApplyVigil-1.0.0-beta.1-x64.zip"
+      "file": "ApplyVigil-1.0.0-beta.2-x64.zip",
+      "bytes": 738816,
+      "sha512": "3a9ece85b175a8efe5e885d6db8c3ad3cdc38c7c40d677d631461a933f255b331acb71bc2d30d9663f96df5f533fd4abdc123f8d9fe1d56245906c57151a4e3a",
+      "url": "https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.2/ApplyVigil-1.0.0-beta.2-x64.zip"
     }
   ]
 }

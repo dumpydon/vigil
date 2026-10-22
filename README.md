@@ -10,7 +10,7 @@
   <a href="https://vigil.dumpydon.workers.dev/install/">Install guide</a> &nbsp;·&nbsp;
   <a href="https://github.com/dumpydon/vigil/releases">Releases &amp; checksums</a>
 </p>
-<p align="center"><sub>Free beta · macOS 13+ · Apple Silicon &amp; Intel</sub></p>
+<p align="center"><sub>Beta 2 · macOS 13+ · Apple Silicon &amp; Intel · No account or login Keychain access</sub></p>
 
 <a href="https://vigil.dumpydon.workers.dev/">
   <img src="docs/images/apply-vigil-demo.gif" alt="Apply Vigil in action: menu bar, floating window, application counts, and progress alerts" width="1280">
