@@ -30,6 +30,8 @@ if(plist('CFBundleExecutable')!=='ApplyVigil')throw new Error('Unexpected native
 const architecture=process.argv[3]??(process.arch==='arm64'?'arm64':'x86_64')
 const architectures=execFileSync('/usr/bin/lipo',['-archs',path.join(app,'Contents/MacOS/ApplyVigil')],{encoding:'utf8'}).trim().split(/\s+/)
 if(!architectures.includes(architecture))throw new Error('The native build does not support its target architecture.')
+const symbols=execFileSync('/usr/bin/nm',['-u',path.join(app,'Contents/MacOS/ApplyVigil')],{encoding:'utf8'})
+if(/\b_SecItem(?:CopyMatching|Add|Update|Delete)\b/.test(symbols))throw new Error('The native app must not access login Keychain items.')
 for(const file of files.filter(file=>file.endsWith('.wav'))){
   const wave=await readFile(path.join(app,file))
   if(wave.toString('ascii',0,4)!=='RIFF'||wave.toString('ascii',8,12)!=='WAVE'||wave.readUInt32LE(40)!==wave.length-44||wave.length<4410)throw new Error(`Invalid bundled sound: ${file}`)

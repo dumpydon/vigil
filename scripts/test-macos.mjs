@@ -5,6 +5,7 @@ import path from 'node:path'
 
 const root=fileURLToPath(new URL('../',import.meta.url))
 const local=process.argv.includes('--local')
+execFileSync(process.execPath,['scripts/test-macos-session.mjs'],{cwd:root,stdio:'inherit'})
 execFileSync(process.execPath,['scripts/build-macos.mjs','--test',...(local?['--local']:[])],{cwd:root,stdio:'inherit'})
 const report=path.join(root,`output/macos/native-${local?'local-':''}smoke-report.json`)
 execFileSync(path.join(root,`output/macos/${local?'Apply Vigil Local Tests':'Apply Vigil Tests'}.app/Contents/MacOS/ApplyVigil`),['--smoke-test','--report',report],{cwd:root,stdio:'inherit',timeout:60_000})
