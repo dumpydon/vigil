@@ -6,6 +6,7 @@ import Icon from './Icon'
 import './Rhythm.css'
 
 const number=(value:number)=>value.toLocaleString('en')
+const RHYTHM_SCALE=.85
 const weekdayFormatter=new Intl.DateTimeFormat('en-US',{timeZone:'UTC',weekday:'short'})
 type Hot={date:string;x:number;y:number;below:boolean}
 function tooltipPosition(container:HTMLElement,node:HTMLElement,date:string):Hot{
@@ -17,15 +18,18 @@ function tooltipPosition(container:HTMLElement,node:HTMLElement,date:string):Hot
 
 export default function Rhythm({snapshot,today,selected,onSelect}:{snapshot:Snapshot;today:string;selected:string|null;onSelect:(day:string)=>void}){
   const [monthCount,setMonthCount]=useState(RHYTHM_MONTH_BATCH)
-  const data=useMemo(()=>rhythm(snapshot,today,monthCount),[snapshot,today,monthCount]),id=useId(),root=useRef<HTMLElement>(null),scroller=useRef<HTMLDivElement>(null),followLatest=useRef(true),expansion=useRef<{left:number;width:number}|null>(null)
-  const [width,setWidth]=useState(0),[hot,setHot]=useState<Hot|null>(null),[focusDate,setFocusDate]=useState<string|null>(null),[edges,setEdges]=useState({earlier:true,later:false})
+  const data=useMemo(()=>rhythm(snapshot,today,monthCount),[snapshot,today,monthCount]),id=useId(),root=useRef<HTMLDivElement>(null),scroller=useRef<HTMLDivElement>(null),followLatest=useRef(true),expansion=useRef<{left:number;width:number}|null>(null)
+  const [width,setWidth]=useState(0),[contentHeight,setContentHeight]=useState<number|null>(null),[hot,setHot]=useState<Hot|null>(null),[focusDate,setFocusDate]=useState<string|null>(null),[edges,setEdges]=useState({earlier:true,later:false})
   const gapWidth=(data.visibleColumns-data.visibleMonths)*RHYTHM_CELL_GAP+(data.visibleMonths-1)*RHYTHM_MONTH_GAP
   const cell=Math.max(10,Math.min(22,((width||360)-6-gapWidth)/Math.max(1,data.visibleColumns)))
   const firstMonth=data.months[0].key,lastMonth=data.months[data.months.length-1].key,detail=hot?data.byDate.get(hot.date):null
   useLayoutEffect(()=>{
-    const node=scroller.current;if(!node)return
-    const observer=new ResizeObserver(([entry])=>{setWidth(entry.contentRect.width);setHot(null)})
-    observer.observe(node);return()=>observer.disconnect()
+    const node=scroller.current,content=root.current;if(!node||!content)return
+    const observer=new ResizeObserver(entries=>{
+      for(const entry of entries)if(entry.target===node){setWidth(entry.contentRect.width);setHot(null)}
+      setContentHeight(Math.ceil(content.offsetHeight*RHYTHM_SCALE))
+    })
+    observer.observe(node);observer.observe(content);return()=>observer.disconnect()
   },[])
   useLayoutEffect(()=>{
     const node=scroller.current
@@ -94,7 +98,8 @@ export default function Rhythm({snapshot,today,selected,onSelect}:{snapshot:Snap
   const busiest=data.busiest.length===1?`${RHYTHM_WEEKDAYS[data.busiest[0]]}s`:data.busiest.length===2?data.busiest.map(index=>RHYTHM_WEEKDAYS[index].slice(0,3)).join(' & '):data.busiest.length?'Multiple days':'—'
   const busiestHelp=data.busiest.length?`${data.busiest.map(index=>RHYTHM_WEEKDAYS[index]).join(', ')}: ${number(data.weekdayTotals[data.busiest[0]])} applications across the last 90 days.`:'No applications in the last 90 days.'
   const streakHelp=`Longest all-time streak: ${data.longest.days} consecutive ${data.longest.days===1?'day':'days'} with at least ${EASY_STREAK_TARGET} LinkedIn Easy Apply applications per day. External/form applications do not count.${data.longest.from&&data.longest.to?` ${longDate(data.longest.from)} – ${longDate(data.longest.to)}.`:''}`
-  return <section className="section rhythm" ref={root} aria-labelledby={`${id}-heading`} style={{'--rhythm-cell':`${cell}px`,'--rhythm-gap':`${RHYTHM_CELL_GAP}px`,'--rhythm-month-gap':`${RHYTHM_MONTH_GAP}px`} as CSSProperties}>
+  return <section className="section rhythm" aria-labelledby={`${id}-heading`} style={{'--rhythm-scale':RHYTHM_SCALE,'--rhythm-cell':`${cell}px`,'--rhythm-gap':`${RHYTHM_CELL_GAP}px`,'--rhythm-month-gap':`${RHYTHM_MONTH_GAP}px`} as CSSProperties}>
+    <div className="rhythm-sizing" style={{height:contentHeight??undefined}}><div className="rhythm-content" ref={root}>
     <div className="section-heading rhythm-heading"><h2 id={`${id}-heading`}>Rhythm</h2><div className="rhythm-navigation" role="group" aria-label="Rhythm history">{data.hasEarlier&&<button className="text-button rhythm-load-earlier" aria-label="Load earlier months" title="Load six more months to the left" onClick={loadEarlier}>Load earlier months</button>}<button className="icon-button" disabled={!edges.earlier} aria-label="Earlier Rhythm months" title="Earlier months" onClick={()=>page(-1)}><Icon name="arrow" size={14}/></button><button className="icon-button" disabled={!edges.later} aria-label="Later Rhythm months" title="Later months" onClick={()=>page(1)}><Icon name="arrow" size={14}/></button></div></div>
     <p className="rhythm-summary"><strong data-testid="rhythm-total">{number(data.total)}</strong><span>applications in the last 90 days</span></p>
     <div className="rhythm-scroll" ref={scroller} onScroll={scrollChanged} aria-label="Application activity by month. Scroll horizontally for earlier months." aria-describedby={`${id}-help`}>
@@ -110,5 +115,6 @@ export default function Rhythm({snapshot,today,selected,onSelect}:{snapshot:Snap
     {hot&&detail&&<div id={`${id}-tooltip`} role="tooltip" className={`rhythm-tooltip${hot.below?' below':''}`} style={{left:`clamp(min(50%, 12rem), ${hot.x}%, max(50%, calc(100% - 12rem)))`,top:hot.y}}>
       <strong><span className="rhythm-tooltip-weekday">{weekdayFormatter.format(new Date(`${detail.date}T00:00:00.000Z`))}</span> · {shortDate(detail.date)}{detail.date.slice(0,4)!==today.slice(0,4)?`, ${detail.date.slice(0,4)}`:''}</strong><span aria-hidden="true">·</span><b>{number(detail.total)} {detail.total===1?'application':'applications'}</b><span className="easy-text">{number(detail.easy)} Easy Apply</span><span className="external-text">{number(detail.external)} form {detail.external===1?'fill':'fills'}</span>{!detail.tracked&&<small>Before tracking began</small>}
     </div>}
+    </div></div>
   </section>
 }

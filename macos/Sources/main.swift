@@ -605,6 +605,9 @@ private enum AlertSound: String, CaseIterable {
             check([...root.querySelectorAll('.chart-day')].every(day=>day.getBoundingClientRect().height>0),'A chart day is no longer interactive');
           }
           const rhythm=root.querySelector('.rhythm'),calendar=rhythm.querySelector('.rhythm-scroll'),today=new Date().toISOString().slice(0,10),start=new Date(Date.parse(today+'T00:00:00.000Z')-89*86400000).toISOString().slice(0,10);
+          const content=rhythm.querySelector('.rhythm-content'),sizing=rhythm.querySelector('.rhythm-sizing');
+          await wait(()=>Math.abs(sizing.offsetHeight-content.offsetHeight*.85)<2,'Scaled Rhythm height');
+          check(Math.abs(content.getBoundingClientRect().width/content.offsetWidth-.85)<.01,'The complete Rhythm content must render at 85 percent');
           const entries=window.__applyVigilTest.state().snapshot.entries.filter(entry=>!entry.deleted&&entry.date>=start&&entry.date<=today),total=entries.reduce((sum,entry)=>sum+entry.easy+entry.external,0),easy=entries.filter(entry=>entry.date===today).reduce((sum,entry)=>sum+entry.easy,0),external=entries.filter(entry=>entry.date===today).reduce((sum,entry)=>sum+entry.external,0);
           check(rhythm.querySelector('[data-testid="rhythm-total"]').textContent===total.toLocaleString('en'),'Rhythm does not include the full rolling 90-day total');
           check(rhythm.querySelectorAll('.rhythm-month').length===6&&rhythm.querySelectorAll('.rhythm-day[tabindex="0"]').length===1,'Rhythm must start with six months and one keyboard entry point');

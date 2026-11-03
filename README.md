@@ -10,7 +10,7 @@
   <a href="https://vigil.dumpydon.workers.dev/install/">Install guide</a> &nbsp;·&nbsp;
   <a href="https://github.com/dumpydon/vigil/releases">Releases &amp; checksums</a>
 </p>
-<p align="center"><sub>Beta 3 · macOS 13+ · Apple Silicon &amp; Intel · No account or login Keychain access</sub></p>
+<p align="center"><sub>Beta 4 · macOS 13+ · Apple Silicon &amp; Intel · No account or login Keychain access</sub></p>
 
 <a href="https://vigil.dumpydon.workers.dev/">
   <img src="docs/images/apply-vigil-demo.gif" alt="Apply Vigil in action: menu bar, floating window, application counts, and progress alerts" width="1280">
@@ -24,7 +24,7 @@
 | Experience | Menu bar + floating window; no Dock icon | Browser dashboard + compact view |
 | Data & access | Local saving + automatic safety copies; optional private cloud backup | Private owner workspace; sign-in, cloud sync & offline cache |
 
-ZIP downloads: [Apple Silicon](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.3/ApplyVigil-1.0.0-beta.3-arm64.zip) · [Intel](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.3/ApplyVigil-1.0.0-beta.3-x64.zip)
+ZIP downloads: [Apple Silicon](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.4/ApplyVigil-1.0.0-beta.4-arm64.zip) · [Intel](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.4/ApplyVigil-1.0.0-beta.4-x64.zip)
 
 ## What it does
 

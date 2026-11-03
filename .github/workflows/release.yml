@@ -8,7 +8,7 @@ on:
       tag:
         description: Existing reviewed Mac release tag
         required: true
-        default: macos-v1.0.0-beta.3
+        default: macos-v1.0.0-beta.4
         type: string
 
 permissions:

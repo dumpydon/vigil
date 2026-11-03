@@ -41,7 +41,9 @@ Usage includes a month-separated activity heat map. Its headline totals the last
 chart's selected range. The calendar opens at that window; horizontal scrolling
 reveals earlier months. Six months are loaded initially; **Load earlier months**
 prepends six more while retaining the current scroll position. This rendering
-limit never truncates stored history, 90-day totals, or all-time streaks.
+limit never truncates stored history, 90-day totals, or all-time streaks. The
+complete calendar content renders at 85% scale with its layout height adjusted
+to match, including controls and tooltips.
 Dates before tracking began are identified, and future dates are
 blank. Hover or keyboard focus shows one date's total, Easy Apply, and form counts.
 

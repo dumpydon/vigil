@@ -1,6 +1,8 @@
-Apply Vigil 1.0.0-beta.3 brings a more compact dashboard, a Rhythm activity calendar, and stronger history protection.
+Apply Vigil 1.0.0-beta.4 brings a more compact dashboard, a Rhythm activity calendar, and stronger history protection.
 
 ## New
+
+- Rhythm now renders at 85% size, including tiles, labels, controls, and tooltips, with matching layout height.
 
 - Rhythm: month-separated green tiles, the latest 90 days, horizontal scrolling, and daily application breakdowns.
 - Six compact Home statistics, including rolling totals and averages that update as you log.

@@ -1,4 +1,7 @@
 .rhythm {position:relative;--rhythm-0:#383838;--rhythm-1:#2b642a;--rhythm-2:#469741;--rhythm-3:#5fbf56;--rhythm-4:#97df93}
+.rhythm-content {position:relative;transform:scale(var(--rhythm-scale));transform-origin:center top}
+.rhythm-sizing {position:relative;min-width:0}
+.desktop .desktop-usage:not(.compact-page) .rhythm {padding-top:12px;padding-bottom:12px}
 .rhythm .rhythm-heading {margin-bottom:2px;min-height:24px}
 .rhythm-navigation {display:flex;align-items:center;gap:2px;margin-left:auto}
 .rhythm .rhythm-navigation .icon-button {width:24px;height:24px;min-height:24px;border-radius:6px;padding:0;color:var(--secondary)}
