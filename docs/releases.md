@@ -1,17 +1,17 @@
 # Apply Vigil public Mac releases
 
-The current public beta is `1.0.0-beta.2` (tag `macos-v1.0.0-beta.2`, bundle version
-3), local-only, ad-hoc signed, and requires macOS 13+. Releases are public at
+The current public beta is `1.0.0-beta.4` (tag `macos-v1.0.0-beta.4`, bundle version
+5), local-first with optional private cloud backup, ad-hoc signed, and requires macOS 13+. Releases are public at
 <https://github.com/dumpydon/vigil/releases>. Public installers must use the
 `.Local` bundle identity and must never contain credentials or personal records.
 
-## Next release preparation
+## Published beta 4
 
-Beta 3 (bundle 4) is in preparation with Rhythm, compact layouts, time settings,
-local safety copies, and optional private cloud backup. Do not switch the site
-manifest until the exact release assets are published and verified. Apply and
-verify migration 0005, test authenticated upload/read-back/recovery, and connect
-the installed owner Mac before declaring its online protection complete.
+Includes Rhythm at 85% size, six months per load, compact layouts, clock
+settings, local safety copies, and optional private cloud backup. Migration
+0005 is applied to the existing Worker/D1 service. Local and native checks pass;
+public installer hashes match the GitHub release manifest. The connected owner
+Mac has been paired separately; no credentials or personal history are bundled.
 
 ## Build and validate
 
@@ -36,8 +36,8 @@ permission-preserving ZIPs, and verifies disk-image checksums.
 
 Output under `output/releases/`:
 
-- `ApplyVigil-1.0.0-beta.2-arm64.dmg` and `.zip`
-- `ApplyVigil-1.0.0-beta.2-x64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.4-arm64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.4-x64.dmg` and `.zip`
 - `SHA512SUMS.txt` and `release.json`
 
 Local builds write metadata only under `output/releases/`. They never overwrite
@@ -62,9 +62,9 @@ coverage.
    versioned download links and changelog, and rebuild/verify the installers.
 2. Review and push source, checksums and public metadata. Merge the reviewed
    source into `main`; production Workers Builds runs `npm run build` and the
-   existing deploy command. No database migration is required for this release.
+   existing deploy command. Migration 0005 must be applied before deploying the cloud-backup routes.
 3. Tag that source with `macos-v<version>`. Update `macos/release-notes.md`, then
-   run **Publish verified Mac beta** in GitHub Actions with that existing tag.
+   push that tag to start **Publish verified Mac beta**, or dispatch it manually with that existing tag.
    Its read-only build job checks out the immutable tag, reruns shared checks,
    builds both installers and verifies mounted DMGs/extracted ZIPs. A separate
    publisher job verifies the exact files and hashes, then uses a repository-
@@ -93,6 +93,6 @@ or broad system-permission change is needed.
 
 Keep JSON backups. Public app data is separate from the executable and from the
 connected owner build. Manual updates retain that data when the bundle identity
-is unchanged. Replacing the app does not create cloud sync. Do not install the
+is unchanged. Replacing the app preserves an existing cloud-backup connection; new installations require explicit pairing in Settings → Data. Do not install the
 public beta over a connected owner installation without an explicit switch and
 backup plan.

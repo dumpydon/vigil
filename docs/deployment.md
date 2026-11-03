@@ -72,3 +72,22 @@ No application entry was created for the smoke check. The durable owner session,
 Open **https://vigil.dumpydon.workers.dev/dashboard/** in your regular browser and sign in. In Safari, choose Share → Add to Dock → Add. In Chrome, use its install control when offered. [Apple's Add to Dock instructions](https://support.apple.com/guide/safari/add-to-dock-ibrw9e991864/mac).
 
 Launch this production installation from the Dock. A previously installed localhost app stays tied to localhost; installing the workers.dev site creates the production app with its own browser storage.
+
+## Cloud backup migration — November 4, 2026
+
+Migration `0005_cloud_backups.sql` was applied additively to the existing Vigil
+D1 database through authenticated D1 Studio. It created backup_devices,
+cloud_backups, cloud_backup_chunks, their index, and the stale-revision trigger.
+Its migration receipt was recorded. The old web tracker records were retained.
+The backup routes were deployed to the same existing Worker and D1 binding.
+
+Owner pairing is separate from the public binary. Installer checks use exact
+file allowlists; device credentials, native vaults, and personal records stay
+outside source control and public artifacts. Public downloads start with local
+saving and require an explicit private-workspace connection for cloud backup.
+The app reports local persistence and verified cloud backup independently.
+
+Cloud backup verification downloads the saved version and checks its digest and
+content. Version rotation does not erase application history from the latest
+full copy. A fresh owner sign-in permits reviewed recovery across devices.
+This deployment does not turn backup into automatic bidirectional live sync.
