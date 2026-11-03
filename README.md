@@ -10,7 +10,7 @@
   <a href="https://vigil.dumpydon.workers.dev/install/">Install guide</a> &nbsp;·&nbsp;
   <a href="https://github.com/dumpydon/vigil/releases">Releases &amp; checksums</a>
 </p>
-<p align="center"><sub>Beta 4 · macOS 13+ · Apple Silicon &amp; Intel · Local use without an account · No Keychain access</sub></p>
+<p align="center"><sub>Beta 5 · macOS 13+ · Apple Silicon &amp; Intel · Local use without an account · No Keychain access</sub></p>
 
 <a href="https://vigil.dumpydon.workers.dev/">
   <img src="docs/images/apply-vigil-demo.gif" alt="Apply Vigil in action: menu bar, floating window, application counts, and progress alerts" width="1280">
@@ -22,9 +22,9 @@
 | | Apply Vigil for Mac | Vigil on the web |
 | :-- | :-- | :-- |
 | Experience | Menu bar + floating window; no Dock icon | Browser dashboard + compact view |
-| Data & access | Local saving + automatic safety copies; optional private cloud backup | Private owner workspace; sign-in, cloud sync & offline cache |
+| Data & access | Local saving + automatic safety copies; automatic private cloud backup | Private owner workspace; sign-in, cloud sync & offline cache |
 
-ZIP downloads: [Apple Silicon](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.4/ApplyVigil-1.0.0-beta.4-arm64.zip) · [Intel](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.4/ApplyVigil-1.0.0-beta.4-x64.zip)
+ZIP downloads: [Apple Silicon](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.5/ApplyVigil-1.0.0-beta.5-arm64.zip) · [Intel](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.5/ApplyVigil-1.0.0-beta.5-x64.zip)
 
 ## What it does
 
@@ -36,7 +36,7 @@ ZIP downloads: [Apple Silicon](https://github.com/dumpydon/vigil/releases/downlo
 
 Log LinkedIn Easy Apply and external/form applications separately. Counts are entered manually; Vigil does not apply for you or access your LinkedIn account.
 
-Cloud backup is optional and requires a private Vigil workspace you own. Public installers contain no account credentials or personal history.
+Each installation creates a private backup identity automatically—no account or password. Save its recovery file outside the Mac to restore after deleting all app data. Reinstalling the app normally retains the existing identity. Public installers contain no shared credentials or personal history.
 
 ## First launch on macOS
 
@@ -74,7 +74,7 @@ npm run db:migrate:local
 
 Run `npm run dev:api` and `npm run dev` in separate terminals, then open the [dashboard](http://127.0.0.1:5173/dashboard/). The [public website](http://127.0.0.1:5173/) uses the same server.
 
-For the public Mac app, use `npm ci` and `npm run macos:build -- --local` on macOS. See the [native build requirements](docs/macos.md#build-test-install).
+For the public Mac app, use `npm ci` and `npm run macos:build` on macOS. See the [native build requirements](docs/macos.md#build-test-install).
 
 Checks: `npm run lint`, `npm test`, `npm run build`.
 

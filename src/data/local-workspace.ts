@@ -60,13 +60,20 @@ export class LocalWorkspace {
       if(!this.protectedImage||image.snapshot.revision>=this.protectedImage.snapshot.revision)this.protectedImage=image
     }
   }
-  private async recover(backup:Backup){
+  private async recover(backup:Backup,minimumRevision=0){
+    if(!Number.isSafeInteger(minimumRevision)||minimumRevision<0||minimumRevision>=Number.MAX_SAFE_INTEGER)throw new ValidationError('Invalid cloud recovery revision.')
     const now=this.clock(),today=utcDay(now),source=validateBackup(backup,today),db=await this.db,saved=await this.safety?.load()
     const image=saved?.image?validateHistoryImage(saved.image,today):null
     const tx=db.transaction(['meta','receipts'],'readwrite'),stored=await tx.objectStore('meta').get('snapshot')
     let valid=!!stored
     if(stored){try{validateHistoryImage({snapshot:stored,receipts:[]},today)}catch{valid=false}}
     let next:Snapshot=stored&&valid?stored:image?.snapshot??{entries:[],policies:[{date:FIRST_DAY,value:DEFAULT_GOAL}],overrides:[],trackingStart:today,revision:0,goalRevision:0,serverNow:now.toISOString()}
+    const empty=next.entries.length===0&&next.revision===0
+    if(empty){
+      // A fresh restore takes the complete historical goals, including the
+      // current goal. Reviewed merges into an existing history retain its goals.
+      next={...next,policies:source.policies,overrides:source.overrides,trackingStart:source.trackingStart}
+    }
     const sources=image?[makeBackup(image.snapshot,now),source]:[source]
     for(const candidate of sources){
       const {backup:prepared,preview}=recoveryPreview(next,candidate,today)
@@ -76,6 +83,7 @@ export class LocalWorkspace {
         await tx.objectStore('receipts').put({request:canonical(operation),result:{revision:next.revision,goalRevision:next.goalRevision}},operation.id)
       }
     }
+    if(minimumRevision>0)next={...next,revision:Math.max(next.revision,minimumRevision+1)}
     if(stored&&!valid)await tx.objectStore('meta').put(stored,'damaged-snapshot-before-recovery')
     await tx.objectStore('meta').put(next,'snapshot');await tx.done
     this.boot=Promise.resolve();await this.protect()
@@ -85,7 +93,10 @@ export class LocalWorkspace {
     const path=String(input),method=init.method??'GET'
     if(!path.startsWith('/api/'))return json({error:'Only local workspace operations are available.'},403)
     if(path==='/api/login'||path==='/api/logout')return json({error:'This local workspace does not need an account.'},400)
-    if(path==='/api/local/recover'&&method==='POST')return this.recover(JSON.parse(String(init.body)))
+    if(path==='/api/local/recover'&&method==='POST'){
+      const value=JSON.parse(String(init.body)) as Backup|{backup:Backup;minimumRevision:number}
+      return 'backup'in value?this.recover(value.backup,value.minimumRevision):this.recover(value)
+    }
     await this.initialize()
     const now=this.clock(),today=utcDay(now),db=await this.db
     if(this.safety&&this.protectedImage){

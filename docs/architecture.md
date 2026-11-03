@@ -69,7 +69,7 @@ Read and unread alerts, and their receipts, expire after 15 days. The inbox prun
 
 ## Privacy and backups
 
-There is one owner login and no registration. Passwords are hashed server-side. Production uses secure HttpOnly session cookies lasting up to 90 days. Private API responses are not cached by the service worker. Cached records can remain on the trusted device after sign-out.
+The legacy web tracker has one owner login. Public Mac backups use automatically registered private identities, without an account form. Passwords are hashed server-side. Production uses secure HttpOnly session cookies lasting up to 90 days. Private API responses are not cached by the service worker. Cached records can remain on the trusted device after sign-out.
 
 Settings provides CSV export and versioned JSON backup/restore. JSON preserves entries, deletion history, goals, and tracking start. Imports retain IDs, add missing records, skip identical records, and preserve current values on conflicts. The whole import is retained locally before chunked syncing begins.
 
@@ -95,9 +95,10 @@ Builds generate an app-shell service worker. The local dev server disables it. V
 
 ## Optional native cloud backup
 
-The public Mac build continues to save locally without an account. After an
-explicit connection to a private Vigil workspace, it uploads full-history
-versions through `/api/backups`. Pairing requires owner sign-in. D1 stores
+The public Mac build continues to save locally without an account. A new installation
+creates a random identity and access secret before registering through
+`/api/backups/register`. It uploads full-history versions through `/api/backups`,
+without an owner password. Existing paired identities remain valid. D1 stores
 only a hash of the revocable device token; the Mac retains the token in a
 private Application Support file (directory 0700, file 0600), without Keychain.
 This is filesystem access protection, not application-level encryption.

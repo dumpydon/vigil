@@ -5,8 +5,8 @@ application tracker. It runs alongside the coding-agent app called Vigil.
 Two separate flavors share the interface:
 
 - **Public local beta:** `dev.dumpydon.ApplyVigil.Local`, starts empty without an
-  account, stores records on the Mac, and blocks the live owner tracker API. Optional
-  cloud backup connects to a private workspace you own.
+  account, stores records on the Mac, and blocks the live owner tracker API. Automatic
+  private cloud backup uses a random identity with no owner password.
 - **Connected owner build:** `dev.dumpydon.ApplyVigil`, retains the existing
   Cloudflare workspace and offline queue.
 
@@ -40,8 +40,9 @@ The dashboard is 425 × 600 points at an 85% interface scale, close to the Vigil
 reference app's proportions.
 
 The public beta needs no sign-in for local use. **On this Mac** reports local
-saving independently from the optional **Backed up** cloud indicator.
-Settings → Data connects a private workspace for verified online backups.
+saving independently from the **Backed up** cloud indicator.
+A random private identity connects automatically. Settings → Data exports or
+imports its recovery file; no owner password is used for normal Mac backups.
 For the connected build, sign in with the web workspace's current owner password.
 Starting with **1.0.0-beta.2**, the development connected build keeps the server-issued token only in
 native process memory. It does not access Keychain or save credentials to disk;
@@ -135,12 +136,15 @@ npm run macos:test
 npm run macos:install
 ```
 
-Build output is `output/macos/Apply Vigil.app`. The build bundles the React UI,
+Build output is `output/macos/local-arm64/Apply Vigil.app` on Apple Silicon or
+`output/macos/local-x86_64/Apply Vigil.app` on Intel. The build bundles the React UI,
 compiles the Swift host for the current Mac's architecture, creates its icon and
 original chimes, ad-hoc signs it, and verifies the signature. Install copies it
 to `/Applications/Apply Vigil.app` and launches it. Quit the installed app before
-reinstalling. The installer keeps the immediately previous app bundle as
-`/Applications/Apply Vigil.previous.app`; application data is stored separately.
+reinstalling. The installer keeps the immediately previous app bundle under
+`~/Library/Application Support/ApplyVigilBackups/<timestamp>/Apply Vigil.app.archived`;
+application data is stored separately. The archive extension prevents old rollback
+copies appearing as launchable apps. Rename it to `.app` only for a deliberate rollback.
 
 The isolated native test has a different bundle ID and a nonpersistent WebKit
 store. Its fake API cannot contact production. It checks the real bundled
@@ -190,8 +194,8 @@ npm run build
 - Preferences and delivered-alert receipts: this app's UserDefaults domain.
 
 The connected build uses the Cloudflare service for live tracker records.
-The public build can optionally upload full-history versions to a private
-workspace through the separate, device-scoped backup API.
+The public build automatically uploads full-history versions under a private
+identity through the separate, device-scoped backup API, unless turned off.
 The public build uses `apply-vigil-device-records-v1` and
 `apply-vigil-local-cache-v1` IndexedDB databases in its separate WebKit store,
 has no live owner-tracker session, and blocks owner-tracker API requests. It adds no
@@ -253,25 +257,57 @@ Verification: `npm run macos:test:history`, `npm run macos:test`, and
 its isolated primary snapshot and verifies automatic recovery; personal stores
 and the production service are never used by these tests.
 
-## Optional cloud backup (beta 3)
+## Password-free cloud backup and recovery (beta 5)
 
-Local saving remains available without an account. Connect a private Vigil
-workspace you own in Settings → Data. The native host authenticates once and
-stores a revocable backup-device credential in
+A fresh installation generates a random UUID and 256-bit access secret. These
+identify one private backup namespace in the existing Cloudflare D1 database;
+a new physical database is not created per user. Registration requires no
+account, email, owner password, hardware ID, or Keychain access. D1 stores the
+secret's hash. Requests are authenticated with the retained secret and cannot
+read other identities' backups or mutate the legacy owner tracker. Anonymous
+registration has per-IP and global limits; failures retain the same identity
+and local history for retries.
+
+The native host keeps its identity in
 `~/Library/Application Support/ApplyVigil/CloudBackup/device.json` with mode 0600
-in a mode-0700 directory. The password is not retained; Keychain is not used.
-This is private filesystem storage, not application-level encryption.
+in a mode-0700 directory. This is private filesystem storage, not application-level
+encryption. Reopening the app, restarting macOS, or replacing only the app bundle
+retains that identity. A damaged identity is retained for recovery, never silently
+replaced. Local saving remains usable offline.
 
-After a local save, the app uploads a full-history version, downloads it,
-checks SHA-256, and compares the content. Only then does **Backed up** indicate
-the latest local revision is verified online. **On this Mac** reports the local
-save independently. Network failures show backup attention/pending while local
-logging continues. Retries run while the app is open and after reopening.
+After a local save, the app uploads a full-history version, downloads it, checks
+SHA-256, and compares the content. Only then does Backed up acknowledge the
+latest local revision. On this Mac reports local persistence independently.
+A fresh empty store with a retained identity automatically checks and restores
+its previous cloud copy before uploading, including historical goals and deletion
+flags. Its revision is raised beyond the recovered cloud revision so new entries
+continue to back up. New local records appearing during recovery stop the auto
+merge and require review. Existing nonempty histories are never silently replaced.
 
-Cloud copies retain 24 recent versions and daily copies for 90 days; the latest
-full history does not expire with the calendar. Recover cloud copy previews
-a missing-ID merge, preserving existing edits, deletion flags, and current goals.
-Reconnect with owner sign-in to review backups belonging to earlier paired
-devices during that app session. Device credentials cannot access or mutate
-the live owner tracker. Disconnect revokes this Mac's token without deleting
-its cloud backup history. There is no automatic bidirectional web/Mac sync.
+Save a recovery file using Settings → Data → Save recovery file, and keep a copy
+on a separate device or a cloud drive you control. The file is a bearer credential:
+anyone holding it can access its backup. After all app data is deleted, Use recovery
+file verifies the cloud copy and previews recovery before changing the identity.
+Unrelated or diverging histories are rejected when the local workspace contains records; matching cached history can reconnect after review.
+If both the identity and recovery file are lost, a hardware ID alone is insufficient
+to prove ownership; automatic recovery cannot be promised. No Apple sign-in or
+account-based recovery is silently implied.
+
+Turning the connection off revokes that credential and persists the opt-out.
+Re-enabling creates a new identity and needs a new recovery file. Cloud versions
+retain the latest 24 copies and daily copies for 90 days; each includes the full
+history and the latest copy does not expire with calendar boundaries. There is
+no automatic bidirectional web/Mac or concurrent multi-Mac live synchronization.
+
+## Avoiding the legacy workspace
+
+`npm run macos:build` and `npm run macos:install` now default to the public app.
+Only `npm run macos:build -- --connected` builds **Vigil Owner (legacy)**. Its
+explicit `--connected-workspace` launch flag is reserved for developer checks;
+otherwise it opens the installed public app if available. Test bundles remain
+isolated. Never copy a developer owner build over a public installation: the
+installer refuses identity changes without an explicit reviewed switch.
+
+Native recovery checks: `npm run macos:test:cloud` uses an in-process mock service
+and temporary files, tests restart persistence and recovery-file import after
+local identity loss, and never contacts production or prompts for a password.

@@ -1,15 +1,16 @@
 import {useEffect,useSyncExternalStore} from 'react'
-import {canonical,makeBackup,type Snapshot} from '../../shared/model'
+import {canonical,makeBackup,utcDay,validateBackup,type Backup,type Snapshot} from '../../shared/model'
 import {engine,type AppState} from '../data/store'
 import {desktopCall,isLocalOnly,isNative} from './bridge'
 
-export interface CloudStatus {connected:boolean;phase:'disconnected'|'pending'|'uploading'|'backedUp'|'error';origin:string;error:string;revision:number|null;verifiedAt:string|null;applications:number|null}
+export interface CloudStatus {connected:boolean;phase:'disconnected'|'connecting'|'paused'|'restoring'|'pending'|'uploading'|'backedUp'|'error';origin:string;error:string;identityId?:string;recoveryFileSaved?:boolean;revision:number|null;verifiedAt:string|null;applications:number|null}
 const listeners=new Set<()=>void>()
 let current:CloudStatus={connected:false,phase:'disconnected',origin:'',error:'',revision:null,verifiedAt:null,applications:null},initialized:Promise<void>|null=null
+let syncing:Promise<void>|null=null,checkedIdentity:string|null=null,recovering=false
 function update(value:CloudStatus){current=value;for(const listener of listeners)listener()}
 async function init(){
   if(!isNative||!isLocalOnly)return
-  if(!initialized)initialized=desktopCall<CloudStatus>('cloudStatus').then(update).catch(error=>update({...current,error:String(error)}))
+  if(!initialized)initialized=desktopCall<CloudStatus>('cloudSetup').then(update).catch(error=>update({...current,phase:'error',error:String(error)}))
   await initialized
 }
 async function payload(snapshot:Snapshot){
@@ -21,11 +22,53 @@ export const cloudBackup={
   subscribe:(listener:()=>void)=>{listeners.add(listener);return()=>{listeners.delete(listener)}},
   getState:()=>current,
   async sync(){
-    await init();const state=engine.getState()
-    if(!current.connected||state.status!=='saved'||!state.snapshot||state.queue.length)return
-    try{update({...current,phase:'uploading',error:''});update(await desktopCall<CloudStatus>('cloudSave',await payload(state.snapshot)))}catch(error){update({...current,phase:'error',error:error instanceof Error?error.message:'Cloud backup is waiting to retry.'})}
+    if(recovering)return
+    if(syncing)return syncing
+    syncing=(async()=>{
+      await init()
+      if(current.phase==='paused')return
+      if(!current.connected)update(await desktopCall<CloudStatus>('cloudSetup'))
+      if(!current.connected)return
+      let state=engine.getState()
+      if(state.status!=='saved'||!state.snapshot||state.queue.length)return
+      if(checkedIdentity!==current.identityId){
+        const {backups}=await desktopCall<{backups:{id:string;revision:number;entries:number}[]}>('cloudList')
+        const latest=backups[0]
+        state=engine.getState()
+        // Recheck after transport: new local entries must never be silently
+        // merged with or overwritten by a cloud identity's older history.
+        if(latest&&state.snapshot?.entries.length===0&&state.snapshot.revision===0&&state.queue.length===0&&(latest.entries>0||latest.revision>0)){
+          update({...current,phase:'restoring',error:''})
+          const copy=await desktopCall<{backupJSON:string;revision:number}>('cloudRead',{id:latest.id})
+          const backup=validateBackup(JSON.parse(copy.backupJSON),utcDay()),fresh=engine.getState()
+          if(!fresh.snapshot||fresh.status!=='saved'||fresh.snapshot.entries.length||fresh.snapshot.revision!==0||fresh.queue.length)throw new Error('Local history changed while checking recovery. Review the cloud copy in Settings → Data; both histories are retained.')
+          await engine.recoverLocalHistory(backup,copy.revision)
+        }
+        checkedIdentity=current.identityId??null
+      }
+      state=engine.getState()
+      if(state.status!=='saved'||!state.snapshot||state.queue.length)return
+      update({...current,phase:'uploading',error:''})
+      update(await desktopCall<CloudStatus>('cloudSave',await payload(state.snapshot)))
+    })().catch(error=>update({...current,phase:'error',error:error instanceof Error?error.message:'Cloud backup is waiting to retry.'})).finally(()=>{
+      syncing=null
+      const state=engine.getState()
+      if(current.connected&&current.phase==='backedUp'&&state.status==='saved'&&state.snapshot&&(current.revision??-1)<state.snapshot.revision)setTimeout(()=>{void cloudBackup.sync()},750)
+    })
+    return syncing
   },
-  async connect(origin:string,password:string){update(await desktopCall<CloudStatus>('cloudConnect',{origin:origin.trim(),password}));await cloudBackup.sync()},
+  async connect(origin:string,password:string){update(await desktopCall<CloudStatus>('cloudConnect',{origin:origin.trim(),password}));checkedIdentity=null;await cloudBackup.sync()},
+  async resume(){update(await desktopCall<CloudStatus>('cloudResume'));checkedIdentity=null;await cloudBackup.sync()},
+  async refresh(){update(await desktopCall<CloudStatus>('cloudStatus'))},
+  async recover(backup:Backup,revision:number,fromRecoveryFile:boolean){
+    recovering=true
+    try{
+      if(syncing)await syncing
+      if(fromRecoveryFile){update(await desktopCall<CloudStatus>('cloudRecoveryApply'));checkedIdentity=null}
+      await engine.recoverLocalHistory(backup,revision)
+    }finally{recovering=false}
+    await cloudBackup.sync()
+  },
   async disconnect(){update(await desktopCall<CloudStatus>('cloudDisconnect'))},
 }
 export function useCloudBackup(state:AppState){

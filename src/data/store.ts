@@ -303,12 +303,12 @@ export class SyncEngine {
     }catch(error){try{tx.abort()}catch{/* Already closed. */}throw new Error(error instanceof Error?error.message:'Import could not be retained. Nothing was imported.')}
     await this.reloadLocal();this.emit({status:this.options.online()?'saving':'offline',error:null});this.broadcast();void this.sync()
   }
-  async recoverLocalHistory(backup:import('../../shared/model').Backup){
+  async recoverLocalHistory(backup:import('../../shared/model').Backup,minimumRevision=0){
     if(!this.options.localOnly)throw new Error('Automatic local recovery is available only in the local workspace.')
     if(this.running)await this.running
     await this.reloadLocal()
     if(this.state.queue.length)throw new Error('Finish saving pending changes before recovering another history. They remain retained on this device.')
-    const response=await this.request('/api/local/recover',{method:'POST',body:JSON.stringify(backup)})
+    const response=await this.request('/api/local/recover',{method:'POST',body:JSON.stringify({backup,minimumRevision})})
     if(!response.ok)throw new Error('The local history could not be recovered. Existing safety copies remain available.')
     await this.sync()
   }

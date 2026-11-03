@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import {afterEach,describe,expect,it,vi} from 'vitest'
 import {SyncEngine} from '../src/data/store'
 import {LocalWorkspace} from '../src/data/local-workspace'
-import {analytics,importPreview,makeBackup} from '../shared/model'
+import {analytics,goalFor,importPreview,makeBackup} from '../shared/model'
 
 const day='2026-10-14',clock=()=>new Date(`${day}T10:00:00.000Z`)
 const engines:SyncEngine[]=[],records:LocalWorkspace[]=[]
@@ -60,5 +60,27 @@ describe('public local-only workspace',()=>{
       expect((await store.fetcher('https://vigil.dumpydon.workers.dev/api/snapshot')).status).toBe(403)
       expect((await store.fetcher('/api/login',{method:'POST',body:'{}'})).status).toBe(400)
     }finally{remote.mockRestore()}
+  })
+  it('restores a fresh installation with its saved goal and advances past the cloud revision',async()=>{
+    const source=await engine(workspace());await source.createEntry(486,0);await source.sync();await source.setGoal(day,55,false);await source.sync()
+    const backup=makeBackup(source.getState().snapshot!,clock()),target=await engine(workspace())
+    expect(goalFor(target.getState().snapshot!,day)).toBe(75)
+    await target.recoverLocalHistory(backup,200)
+    expect(total(target)).toBe(486);expect(goalFor(target.getState().snapshot!,day)).toBe(55)
+    expect(target.getState().snapshot!.revision).toBeGreaterThan(200)
+    await target.createEntry(1,0);await target.sync()
+    expect(total(target)).toBe(487);expect(target.getState().snapshot!.revision).toBeGreaterThan(201)
+    const revision=target.getState().snapshot!.revision
+    await target.recoverLocalHistory(backup,200)
+    expect(total(target)).toBe(487);expect(target.getState().snapshot!.entries).toHaveLength(2)
+    expect(target.getState().snapshot!.revision).toBeGreaterThanOrEqual(revision)
+  })
+  it('does not change 486 existing applications or their current goal when reviewing an older copy',async()=>{
+    const one=await engine(workspace());await one.createEntry(227,0);await one.sync()
+    const older=makeBackup(one.getState().snapshot!,clock())
+    await one.createEntry(259,0);await one.sync();await one.setGoal(day,55,false);await one.sync()
+    await one.recoverLocalHistory(older,200)
+    expect(total(one)).toBe(486);expect(goalFor(one.getState().snapshot!,day)).toBe(55)
+    expect(one.getState().snapshot!.entries).toHaveLength(2)
   })
 })

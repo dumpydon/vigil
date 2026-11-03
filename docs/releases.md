@@ -13,6 +13,22 @@ settings, local safety copies, and optional private cloud backup. Migration
 public installer hashes match the GitHub release manifest. The connected owner
 Mac has been paired separately; no credentials or personal history are bundled.
 
+## Beta 5 preparation
+
+Beta 5 removes password setup from normal public Mac backups, adds recovery
+files, and makes the local-first build the default. The developer connected
+app has a distinct legacy name and explicitly redirects normal launches to
+the installed public app. Public registration uses the existing backup tables;
+no new database or migration beyond 0005 is needed. The manifest's localOnly
+field describes the local primary engine; storage/cloudBackup/requiresAccount
+fields make the automatic backup behavior explicit.
+
+Checks now include `npm run macos:test:cloud`, which uses an in-process fake
+service and temporary files, including a full identity-loss/recovery simulation.
+The developer also exercised an isolated synthetic identity against production,
+without using or changing personal records. Switch public download metadata only
+after the exact beta 5 artifacts are published and checked.
+
 ## Build and validate
 
 On a Mac with Command Line Tools, Node 22.14+ and Python 3.10+:
@@ -24,6 +40,7 @@ npm test
 npm run build
 npm run macos:test
 npm run macos:test -- --local
+npm run macos:test:cloud
 npm run macos:package
 ```
 

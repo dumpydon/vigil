@@ -7,6 +7,48 @@ afterEach(async()=>{await test?.dispose()})
 async function pair(){await test.login();const id=crypto.randomUUID();const response=await test.fetcher('/api/backups/devices',{method:'POST',body:JSON.stringify({id,name:'Test Mac'})});expect(response.status).toBe(200);return await response.json() as {id:string;token:string}}
 const auth=(token:string)=>({Authorization:`Bearer ${token}`})
 async function source(){await test.login();await test.mutate(test.op(25,22));return makeBackup(await test.snapshot(),test.clock())}
+async function register(){
+  const identity={id:crypto.randomUUID(),token:crypto.randomUUID().replaceAll('-','')+crypto.randomUUID().replaceAll('-','')}
+  const response=await test.fetcher('/api/backups/register',{method:'POST',body:JSON.stringify(identity)})
+  expect(response.status).toBe(200);return identity
+}
+describe('password-free public backup identities',()=>{
+  it('registers without an owner account, resumes idempotently, and prevents ID takeover',async()=>{
+    const identity=await register()
+    expect((await test.fetcher('/api/backups/register',{method:'POST',body:JSON.stringify(identity)})).status).toBe(200)
+    expect((await test.fetcher('/api/backups/register',{method:'POST',body:JSON.stringify({...identity,token:'a'.repeat(64)})})).status).toBe(409)
+    expect((await test.fetcher('/api/snapshot',{headers:auth(identity.token)})).status).toBe(401)
+    expect((await test.fetcher('/api/backups',{headers:auth(identity.token)})).status).toBe(200)
+    const row=await test.env.DB.prepare('SELECT token_hash FROM backup_devices WHERE id=?').bind(identity.id).first<{token_hash:string}>()
+    expect(row?.token_hash).not.toBe(identity.token)
+  })
+  it('keeps anonymous users separate and permits recovery with the saved credential only',async()=>{
+    const backup=await source();test.clearCookie()
+    const one=await register(),two=await register()
+    const response=await test.fetcher('/api/backups',{method:'POST',headers:auth(one.token),body:JSON.stringify({id:crypto.randomUUID(),revision:200,backupJSON:JSON.stringify(backup)})})
+    expect(response.status).toBe(200);const copy=await response.json() as {id:string}
+    expect((await test.fetcher('/api/backups/'+copy.id,{headers:auth(two.token)})).status).toBe(404)
+    expect((await test.fetcher('/api/backups/'+copy.id)).status).toBe(401)
+    expect((await test.fetcher('/api/backups/'+copy.id,{headers:auth(one.token)})).status).toBe(200)
+    expect((await test.fetcher('/api/backups',{headers:auth(two.token)})).status).toBe(200)
+  })
+  it('does not let registration reactivate a revoked identity',async()=>{
+    const identity=await register()
+    expect((await test.fetcher('/api/backups/devices/'+identity.id,{method:'DELETE',headers:auth(identity.token)})).status).toBe(200)
+    expect((await test.fetcher('/api/backups/register',{method:'POST',body:JSON.stringify(identity)})).status).toBe(409)
+    expect((await test.fetcher('/api/backups',{headers:auth(identity.token)})).status).toBe(401)
+  })
+  it('bounds anonymous registrations and still lets an existing identity reconnect',async()=>{
+    const first=await register()
+    for(let index=1;index<20;index++)await register()
+    const input={id:crypto.randomUUID(),token:'b'.repeat(64)}
+    expect((await test.fetcher('/api/backups/register',{method:'POST',body:JSON.stringify(input)})).status).toBe(429)
+    expect((await test.fetcher('/api/backups/register',{method:'POST',body:JSON.stringify(first)})).status).toBe(200)
+    const row=await test.env.DB.prepare('SELECT COUNT(*) AS count FROM backup_devices').first<{count:number}>()
+    expect(row?.count).toBe(20)
+    test.setTime('2026-10-08T01:00:00.000Z');expect((await test.fetcher('/api/backups/register',{method:'POST',body:JSON.stringify(input)})).status).toBe(200)
+  })
+})
 describe('private cloud backup storage',()=>{
   it('requires owner pairing and scopes device tokens away from the owner API',async()=>{
     expect((await test.fetcher('/api/backups/devices',{method:'POST',body:JSON.stringify({id:crypto.randomUUID(),name:'Other'})})).status).toBe(401)

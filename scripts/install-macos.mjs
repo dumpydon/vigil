@@ -6,13 +6,14 @@ import os from 'node:os'
 import {processesForApp} from './macos-processes.mjs'
 
 const root=fileURLToPath(new URL('../',import.meta.url))
-const local=process.argv.includes('--local')
+const local=!process.argv.includes('--connected')
 const architecture=process.arch==='arm64'?'arm64':'x86_64'
-const source=path.join(root,'output/macos',local?`local-${architecture}`:'','Apply Vigil.app')
+const source=path.join(root,'output/macos',local?`local-${architecture}`:'',local?'Apply Vigil.app':'Vigil Owner (legacy).app')
 const destination='/Applications/Apply Vigil.app'
 const staging='/Applications/Apply Vigil.installing.app'
 const backup=path.join(os.homedir(),'Library/Application Support/ApplyVigilBackups',new Date().toISOString().replace(/[:.]/g,'-'))
-const previous=path.join(backup,'Apply Vigil.app')
+// Retain a rollback copy without registering it as another launchable app.
+const previous=path.join(backup,'Apply Vigil.app.archived')
 await access(source)
 const identity=app=>execFileSync('/usr/libexec/PlistBuddy',['-c','Print :CFBundleIdentifier',path.join(app,'Contents/Info.plist')],{encoding:'utf8'}).trim()
 let installedIdentity,installedExists=false

@@ -18,6 +18,21 @@ async function device(request:Request,env:Env):Promise<Device|null>{
 export async function backupRoute(request:Request,env:Env,now:Date):Promise<Response|null>{
   const path=new URL(request.url).pathname
   if(!path.startsWith('/api/backups'))return null
+  if(path==='/api/backups/register'&&request.method==='POST'){
+    if(!env.SESSION_SECRET)return reply({error:'Automatic backup registration is temporarily unavailable.'},503)
+    const value=await input(request,2048) as {id:string;token:string};assertUuid(value.id)
+    if(typeof value.token!=='string'||!/^([a-f0-9]{64})$/.test(value.token))throw new ValidationError('A random 256-bit backup credential is required.')
+    const tokenHash=await sha(value.token)
+    const existing=await env.DB.prepare('SELECT token_hash,revoked FROM backup_devices WHERE id=?').bind(value.id).first<{token_hash:string;revoked:number}>()
+    if(existing)return existing.token_hash===tokenHash&&!existing.revoked?reply({id:value.id,registered:true}):reply({error:'This backup identity cannot be registered. Restore your recovery file or review the existing connection.'},409)
+    const window=Math.floor(now.getTime()/86_400_000)*86_400_000
+    const keys=await Promise.all([hmac(env.SESSION_SECRET,'backup-registration:ip:'+(request.headers.get('cf-connecting-ip')??'local')),hmac(env.SESSION_SECRET,'backup-registration:global')])
+    const limits=await env.DB.batch(keys.map(key=>env.DB.prepare('INSERT INTO login_limits(key_hash,window_start,attempts) VALUES(?,?,1) ON CONFLICT(key_hash) DO UPDATE SET attempts=CASE WHEN window_start=excluded.window_start THEN attempts+1 ELSE 1 END,window_start=excluded.window_start RETURNING attempts').bind(key,window)))
+    if(Number((limits[0].results[0] as {attempts:number}).attempts)>20||Number((limits[1].results[0] as {attempts:number}).attempts)>500)return reply({error:'New backup registration is temporarily limited. Your history stays on this Mac and registration will retry later.'},429)
+    await env.DB.prepare('INSERT OR IGNORE INTO backup_devices(id,token_hash,name,created_at) VALUES(?,?,?,?)').bind(value.id,tokenHash,'Private Mac backup',now.toISOString()).run()
+    const saved=await env.DB.prepare('SELECT token_hash,revoked FROM backup_devices WHERE id=?').bind(value.id).first<{token_hash:string;revoked:number}>()
+    return saved?.token_hash===tokenHash&&!saved.revoked?reply({id:value.id,registered:true}):reply({error:'Backup registration conflicted. No history was changed.'},409)
+  }
   if(path==='/api/backups/devices'&&request.method==='POST'){
     if(!await requireOwner(request,env,now.getTime()))return reply({error:'Sign in to your private workspace to connect this Mac.'},401)
     const value=await input(request,2048) as {id:string;name:string};assertUuid(value.id)

@@ -4,7 +4,7 @@ import path from 'node:path'
 import {fileURLToPath} from 'node:url'
 
 const root=fileURLToPath(new URL('../',import.meta.url))
-const app=path.resolve(root,process.argv[2]??'output/macos/Apply Vigil.app')
+const app=path.resolve(root,process.argv[2]??`output/macos/local-${process.arch==='arm64'?'arm64':'x86_64'}/Apply Vigil.app`)
 const required=new Set([
   'Contents/Info.plist','Contents/PkgInfo','Contents/MacOS/ApplyVigil',
   'Contents/_CodeSignature/CodeResources','Contents/Resources/AppIcon.icns',

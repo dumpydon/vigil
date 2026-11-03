@@ -64,6 +64,16 @@ private enum AlertSound: String, CaseIterable {
     private var version: String { Bundle.main.object(forInfoDictionaryKey: "ApplyVigilDisplayVersion") as? String ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0" }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        let arguments = ProcessInfo.processInfo.arguments
+        if !smokeTest, !localOnly,
+           !arguments.contains("--connected-workspace"), !arguments.contains("--preview-build") {
+            let installed = URL(fileURLWithPath: "/Applications/Apply Vigil.app")
+            if let bundle = Bundle(url: installed), bundle.object(forInfoDictionaryKey: "ApplyVigilLocalOnly") as? Bool == true {
+                // A legacy development copy must not look like the user's
+                // current workspace or invite a misleading owner sign-in.
+                NSWorkspace.shared.open(installed); NSApp.terminate(nil); return
+            }
+        }
         if !smokeTest, let identifier = Bundle.main.bundleIdentifier,
            let existing = NSRunningApplication.runningApplications(withBundleIdentifier: identifier).filter({ $0.processIdentifier < NSRunningApplication.current.processIdentifier }).first {
             // One workspace, one running host. Launching an older copy from a
@@ -298,6 +308,19 @@ private enum AlertSound: String, CaseIterable {
             guard localOnly else { throw DesktopError.message("Only the local workspace uses a local safety image.") }
             return await historyVault.loadLocal()
         case "cloudStatus": return cloudBackup.status()
+        case "cloudSetup":
+            guard !smokeTest else { return cloudBackup.status() }
+            return await cloudBackup.setup()
+        case "cloudResume":
+            guard !smokeTest else { return cloudBackup.status() }
+            return try await cloudBackup.resume()
+        case "cloudRecoveryExport":
+            fileDialogOpen = true; defer { fileDialogOpen = false }
+            return try await cloudBackup.exportRecoveryFile()
+        case "cloudRecoveryChoose":
+            fileDialogOpen = true; defer { fileDialogOpen = false }
+            return try await cloudBackup.chooseRecoveryFile()
+        case "cloudRecoveryApply": return try cloudBackup.applyRecoveryIdentity()
         case "cloudConnect":
             guard !smokeTest, let origin = data["origin"] as? String, let password = data["password"] as? String else { throw DesktopError.message("Cloud connection is unavailable in this test or request.") }
             return try await cloudBackup.connect(origin: origin, password: password)

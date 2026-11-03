@@ -32,12 +32,12 @@ jobs:
       - run: npm run typecheck
       - name: Verify native sessions never use Keychain
         if: matrix.architecture == 'arm64'
-        run: npm run macos:test:session && npm run macos:test:history
+        run: npm run macos:test:session && npm run macos:test:history && npm run macos:test:cloud
       - name: Keep the connected owner build working
         if: matrix.architecture == 'arm64'
         run: |
-          npm run macos:build
-          npm run macos:verify
+          npm run macos:build -- --connected
+          npm run macos:verify -- 'output/macos/Vigil Owner (legacy).app'
       - name: Build and verify the public local-only installer
         run: npm run macos:package -- --arch ${{ matrix.architecture }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

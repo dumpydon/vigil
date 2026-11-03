@@ -1,22 +1,26 @@
-Apply Vigil 1.0.0-beta.4 brings a more compact dashboard, a Rhythm activity calendar, and stronger history protection.
+Apply Vigil 1.0.0-beta.5 removes the owner-password setup from normal Mac use and adds password-free cloud recovery.
 
-## New
+## Fixed
 
-- Rhythm now renders at 85% size, including tiles, labels, controls, and tooltips, with matching layout height.
+- Standard builds and installs now use the public local-first app by default. The developer-only connected build has a distinct legacy name and requires an explicit flag. Development copies hand off to the installed app so they cannot silently open a different history.
+- The legacy web workspace is labeled clearly and stays separate from Mac backups.
+- A fresh cloud restore preserves its full saved goal history and advances the local revision beyond the cloud copy, so new entries continue to back up. An older revision can never be labeled Backed up.
 
-- Rhythm: month-separated green tiles, the latest 90 days, horizontal scrolling, and daily application breakdowns.
-- Six compact Home statistics, including rolling totals and averages that update as you log.
-- Easy Apply streaks qualify at 20 applications per day, independently of the combined daily goal.
-- India time by default, configurable time zones, and 12/24-hour clocks.
-- General, Alerts, and Data settings tabs with concise controls and expandable details.
-- Compact Usage spacing and two-line recent-entry timestamps.
-- Independent verified local safety copies and reviewed recovery that preserves existing records and goals.
-- Optional authenticated cloud backup to your own Vigil workspace, with downloaded-copy verification and recovery. Public downloads contain no credentials and upload nothing until connected.
+## Password-free private backup
 
-## Update
+- A new installation creates a random private backup identity automatically. No account, email, owner password, hardware ID, or login Keychain is needed.
+- Each identity can access only its own versioned cloud backups in the existing Cloudflare service. Registration is bounded against abuse.
+- The identity persists outside the app bundle. Reopening or replacing the app keeps it. Local saves remain usable offline.
+- Save a recovery file in Settings → Data and keep a separate copy outside the Mac. If all app data is erased, import it to retrieve your previous cloud history without a password. Anyone holding that file can access the backup.
+- Recovery previews preserve existing entries and goals. An unrelated or diverging identity cannot be silently merged into a nonempty local workspace. Matching cached history may reconnect after review. If both the retained identity and recovery file are lost, a hardware ID cannot safely recover the data.
+- Users can turn cloud backup off. Public installers contain no shared credentials or personal records.
 
-Export a JSON backup, quit Apply Vigil, and replace the app in Applications. The public app retains its existing bundle identity and local history. Cloud backup requires a private workspace; it does not automatically connect to the project creator’s account.
+## Included
 
-Choose arm64 for Apple Silicon or x64 for Intel. macOS 13 or later is required. The beta is ad-hoc signed and not notarized by Apple. Follow the [installation guide](https://vigil.dumpydon.workers.dev/install/) if macOS requests first-launch approval.
+Rhythm at 85% size with six months per load; 20-Easy-Apply streaks; rolling Home totals and averages; India time and 12/24-hour clocks; compact settings and entry rows; independent local safety copies; separate local and cloud status indicators.
 
-Intel binaries are cross-compiled and structurally verified; physical Intel and clean macOS 13 runtime testing remain compatibility limits. Updates are manual. Release files include SHA-512 checksums.
+## Update and compatibility
+
+Export a JSON backup, quit Apply Vigil, and replace the app in Applications. The public app retains its existing bundle identity, history, and backup connection. Choose arm64 for Apple Silicon or x64 for Intel. macOS 13+ is required. Updates are manual.
+
+The beta is ad-hoc signed and not notarized by Apple. Follow the [installation guide](https://vigil.dumpydon.workers.dev/install/) for first-open approval. Intel is cross-compiled and structurally verified; physical Intel and clean macOS 13 runtime testing remain compatibility limits. Release files include SHA-512 checksums.

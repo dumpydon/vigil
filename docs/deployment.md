@@ -84,10 +84,26 @@ The backup routes were deployed to the same existing Worker and D1 binding.
 Owner pairing is separate from the public binary. Installer checks use exact
 file allowlists; device credentials, native vaults, and personal records stay
 outside source control and public artifacts. Public downloads start with local
-saving and require an explicit private-workspace connection for cloud backup.
+saving. Beta 3/4 required an explicit private-workspace connection for cloud backup;
+beta 5 replaces that setup with automatic private registration, described below.
 The app reports local persistence and verified cloud backup independently.
 
 Cloud backup verification downloads the saved version and checks its digest and
 content. Version rotation does not erase application history from the latest
-full copy. A fresh owner sign-in permits reviewed recovery across devices.
+full copy. Beta 5 uses a private recovery file for reviewed recovery across devices.
 This deployment does not turn backup into automatic bidirectional live sync.
+
+## Password-free public backup identities — beta 5
+
+`POST /api/backups/register` registers a random installation UUID and a 256-bit
+access secret without an owner login. D1 stores the secret's hash. Registration
+is idempotent for the same identity/secret, rejects ID takeover and revoked
+identities, and is bounded per IP and globally using hashed rate-limit keys.
+It reuses the existing backup tables and the single Worker/D1 configuration.
+
+Normal Mac use is now local-first with automatic tenant-scoped backup, not
+the older shared owner tracker. The owner web workspace remains authenticated
+and is labeled legacy. A recovery file containing the private identity/secret
+allows recovery after all app data is erased. Its possession is the recovery
+proof; a public hardware ID cannot safely substitute for it. No Apple sign-in,
+Keychain dependency, account form, or third-party paid service is introduced.

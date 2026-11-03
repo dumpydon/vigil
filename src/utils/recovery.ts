@@ -1,5 +1,15 @@
 import {FIRST_DAY,goalFor,importPreview,utcDay,type Backup,type Snapshot} from '../../shared/model'
 
+export function recoveryIdentityCompatible(current:Snapshot|null,source:Backup,sameIdentity:boolean){
+  if(sameIdentity||!current?.entries.length)return true
+  if(!source.entries.length)return false
+  const currentIds=new Set(current.entries.map(entry=>entry.id)),sourceIds=new Set(source.entries.map(entry=>entry.id))
+  // A lost credential can leave a cache of the same history behind. Permit a
+  // reviewed reconnect when one retained ID set extends the other, never an
+  // unrelated or diverging workspace merely because its totals look alike.
+  return current.entries.every(entry=>sourceIds.has(entry.id))||source.entries.every(entry=>currentIds.has(entry.id))
+}
+
 export function recoveryPreview(current:Snapshot|null,source:Backup,today=utcDay()){
   const snapshot=current??{entries:[],policies:[{date:FIRST_DAY,value:75}],overrides:[],trackingStart:today,revision:0,goalRevision:0,serverNow:new Date().toISOString()}
   // Merge older goals only before the current history begins. Retain a policy
