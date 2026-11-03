@@ -14,6 +14,7 @@
     "macos:build": "node scripts/build-macos.mjs",
     "macos:test": "node scripts/test-macos.mjs",
     "macos:test:session": "node scripts/test-macos-session.mjs",
+    "macos:test:history": "node scripts/test-macos-history.mjs",
     "macos:verify": "node scripts/verify-macos-bundle.mjs",
     "macos:package": "node scripts/package-macos.mjs",
     "macos:install": "node scripts/install-macos.mjs",

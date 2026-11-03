@@ -1,0 +1,52 @@
+.rhythm {position:relative;--rhythm-0:#383838;--rhythm-1:#2b642a;--rhythm-2:#469741;--rhythm-3:#5fbf56;--rhythm-4:#97df93}
+.rhythm .rhythm-heading {margin-bottom:2px;min-height:24px}
+.rhythm-navigation {display:flex;align-items:center;gap:2px;margin-left:auto}
+.rhythm .rhythm-navigation .icon-button {width:24px;height:24px;min-height:24px;border-radius:6px;padding:0;color:var(--secondary)}
+.rhythm-navigation button[aria-label="Earlier Rhythm months"] svg {transform:rotate(180deg)}
+.rhythm .rhythm-navigation .rhythm-load-earlier {min-height:24px;padding:0 6px;font-size:10px;line-height:16px;color:var(--secondary);white-space:nowrap}
+.rhythm .rhythm-navigation button:disabled {opacity:.2}
+.rhythm-summary {display:flex;align-items:baseline;gap:6px;margin:0 0 12px;color:var(--secondary);font-size:.75rem;line-height:1.5}
+.rhythm-summary strong {color:var(--text);font-size:1.25rem;line-height:1.5;font-weight:650;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.rhythm-scroll {overflow-x:auto;overflow-y:hidden;padding:3px 0 5px;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#ffffff24 transparent}
+/* WebKit omits an overflowing scrollport's trailing padding. Keep the end
+   inset on the track so today's tile and its focus ring remain fully visible. */
+.rhythm-months {position:relative;display:flex;align-items:flex-start;gap:var(--rhythm-month-gap);width:max-content;padding-right:6px}
+.rhythm-month {flex:none;min-width:0}
+.rhythm-month-days {display:grid;grid-template-rows:repeat(7,var(--rhythm-cell));grid-auto-flow:column;gap:var(--rhythm-gap)}
+.rhythm .rhythm-day,.rhythm-placeholder {display:block;width:var(--rhythm-cell);height:var(--rhythm-cell);min-width:0;min-height:0;margin:0;padding:0;border:0;border-radius:3px}
+.rhythm .rhythm-day {appearance:none;background:var(--rhythm-0);cursor:pointer;box-shadow:none;transition:filter .12s,box-shadow .12s}
+.rhythm [data-level="0"] {--rhythm-color:var(--rhythm-0);background:var(--rhythm-color)}
+.rhythm [data-level="1"] {--rhythm-color:var(--rhythm-1);background:var(--rhythm-color)}
+.rhythm [data-level="2"] {--rhythm-color:var(--rhythm-2);background:var(--rhythm-color)}
+.rhythm [data-level="3"] {--rhythm-color:var(--rhythm-3);background:var(--rhythm-color)}
+.rhythm [data-level="4"] {--rhythm-color:var(--rhythm-4);background:var(--rhythm-color)}
+.rhythm .rhythm-day:hover,.rhythm .rhythm-day.is-hot {background:var(--rhythm-color);filter:brightness(1.12);box-shadow:inset 0 0 0 1.5px #ddffe6c9}
+.rhythm .rhythm-day:active {transform:none}
+.rhythm .rhythm-day.is-today {box-shadow:inset 0 0 0 1px #e4ffeb66}
+.rhythm .rhythm-day.is-selected {box-shadow:inset 0 0 0 1.5px #edfff2}
+.rhythm .rhythm-day:focus-visible {outline:2px solid #b6f4c6;outline-offset:-2px}
+.rhythm-month-label {display:flex;align-items:baseline;justify-content:center;gap:4px;padding-top:7px;font-size:.625rem;line-height:1rem;color:var(--secondary);white-space:nowrap}
+.rhythm-month:last-child .rhythm-month-label {justify-content:flex-end}
+.rhythm-month-label small {font-size:.5rem;line-height:1;color:var(--muted)}
+.rhythm-legend {display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:3px;font-size:.59375rem;line-height:1rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.rhythm-legend>div {display:flex;align-items:center;gap:3px}
+.rhythm-legend>div>span:first-child {margin-right:3px}
+.rhythm-legend>div>span:last-child {margin-left:3px}
+.rhythm-legend i {display:block;width:8px;height:8px;border-radius:2px}
+.rhythm-stats {display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid #ffffff0c}
+.rhythm-stats>div {display:flex;align-items:baseline;gap:6px;min-width:0}
+.rhythm-stats>div:last-child {justify-content:flex-end}
+.rhythm-stats span {font-size:.625rem;line-height:1rem;color:var(--muted);white-space:nowrap}
+.rhythm-stats strong {font-size:.75rem;line-height:1rem;font-weight:550;color:var(--text);font-variant-numeric:tabular-nums}
+.rhythm-stats small {font-size:.625rem;font-weight:400;color:var(--secondary)}
+.rhythm-tooltip {position:absolute;z-index:20;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:3px 7px;width:max-content;max-width:calc(100% - 20px);padding:9px 12px;border:1px solid #ffffff0c;border-radius:9px;background:#25262e;box-shadow:0 6px 24px #0005;color:#e5e6eb;font-size:.6875rem;line-height:1rem;transform:translate(-50%,-100%);pointer-events:none;animation:tooltip-in .12s ease-out}
+.rhythm-tooltip.below {transform:translate(-50%,0)}
+.rhythm-tooltip strong,.rhythm-tooltip b {font-size:inherit;font-weight:650;white-space:nowrap}
+.rhythm-tooltip>span {white-space:nowrap}
+.rhythm-tooltip-weekday {text-transform:uppercase;font-size:.625rem;letter-spacing:.025em}
+.rhythm-tooltip>small {flex-basis:100%;text-align:center;font-size:.625rem;color:var(--muted)}
+.desktop .desktop-usage .rhythm-heading {min-height:24px;margin-bottom:2px}
+.desktop .rhythm-summary {font-size:11px;margin-bottom:10px}
+.desktop .rhythm-summary strong {font-size:20px}
+@media(max-width:380px){.rhythm-stats{gap:8px}.rhythm-stats>div{flex-wrap:wrap;gap:2px 5px}.rhythm-stats>div:last-child{justify-content:flex-end}.rhythm-tooltip{font-size:10px;padding:8px 10px}}
+@media(prefers-reduced-motion:reduce){.rhythm .rhythm-day{transition:none}.rhythm-tooltip{animation:none}}

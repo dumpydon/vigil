@@ -5,6 +5,14 @@ The current public beta is `1.0.0-beta.2` (tag `macos-v1.0.0-beta.2`, bundle ver
 <https://github.com/dumpydon/vigil/releases>. Public installers must use the
 `.Local` bundle identity and must never contain credentials or personal records.
 
+## Next release preparation
+
+Beta 3 (bundle 4) is in preparation with Rhythm, compact layouts, time settings,
+local safety copies, and optional private cloud backup. Do not switch the site
+manifest until the exact release assets are published and verified. Apply and
+verify migration 0005, test authenticated upload/read-back/recovery, and connect
+the installed owner Mac before declaring its online protection complete.
+
 ## Build and validate
 
 On a Mac with Command Line Tools, Node 22.14+ and Python 3.10+:

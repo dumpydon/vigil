@@ -76,14 +76,16 @@ describe('quiet alert policy',()=>{
     expect(reconcileAlerts(halfway,snapshot(evening,75),evening,19).items.map(item=>item.kind)).toEqual(['goal','halfway','overview'])
     expect(reconcileAlerts(emptyInbox(),snapshot(later,38),later,12).items.map(item=>item.kind)).toEqual(['halfway'])
   })
-  it('replaces completion with one streak celebration using historical day goals',()=>{
+  it('uses 20 Easy Apply per day for a streak celebration, independent of daily goals',()=>{
     const data=snapshot(morning,75)
     data.entries.push(entry('2026-10-13',50),entry('2026-10-12',75))
     data.overrides=[{date:'2026-10-13',value:50}]
     const streak=reconcileAlerts(emptyInbox(),data,morning,10)
-    expect(streak.items[0]).toMatchObject({kind:'streak',id:'goal:2026-10-14',title:'3-day goal streak'})
+    expect(streak.items[0]).toMatchObject({kind:'streak',id:'goal:2026-10-14',title:'3-day Easy Apply streak'})
     expect(reconcileAlerts(streak,data,morning,10)).toBe(streak)
     data.overrides=[]
+    expect(reconcileAlerts(emptyInbox(),data,morning,10).items[0].kind).toBe('streak')
+    data.entries.find(e=>e.date==='2026-10-13')!.easy=19
     expect(reconcileAlerts(emptyInbox(),data,morning,10).items[0].kind).toBe('goal')
   })
   it('celebrates a comeback only after two tracked quiet days and earlier activity',()=>{

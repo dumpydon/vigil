@@ -5,7 +5,8 @@ application tracker. It runs alongside the coding-agent app called Vigil.
 Two separate flavors share the interface:
 
 - **Public local beta:** `dev.dumpydon.ApplyVigil.Local`, starts empty without an
-  account, stores records on the Mac, and never calls the owner API.
+  account, stores records on the Mac, and blocks the live owner tracker API. Optional
+  cloud backup connects to a private workspace you own.
 - **Connected owner build:** `dev.dumpydon.ApplyVigil`, retains the existing
   Cloudflare workspace and offline queue.
 
@@ -38,7 +39,9 @@ Right-click it for the compact pop-out, Settings, pinning, the website, and Quit
 The dashboard is 425 × 600 points at an 85% interface scale, close to the Vigil
 reference app's proportions.
 
-The public beta needs no sign-in and labels saved data **On this Mac**.
+The public beta needs no sign-in for local use. **On this Mac** reports local
+saving independently from the optional **Backed up** cloud indicator.
+Settings → Data connects a private workspace for verified online backups.
 For the connected build, sign in with the web workspace's current owner password.
 Starting with **1.0.0-beta.2**, the development connected build keeps the server-issued token only in
 native process memory. It does not access Keychain or save credentials to disk;
@@ -49,12 +52,25 @@ Previously installed connected builds use Keychain until their app bundle is
 replaced; changing repository source does not update those installed copies.
 
 - **Today:** current UTC goal, remaining count, Easy Apply/external quick buttons,
-  custom and mixed batches, goal changes, progress statistics, and undo.
+  custom and mixed batches, goal changes, and undo. The compact momentum summary
+  uses four columns: yesterday, 7-day total/average, 30-day total/average, all time.
+  Both rolling windows include today (today + the preceding 6 or 29 dates).
+  Their daily averages divide the totals by 7 or 30, including zero-entry days;
+  they update from retained pending additions/undo immediately, before sync.
+  These rolling home metrics are independent of Usage's completed-period
+  comparisons and the selected 7/15/30-day chart range.
+  A ring beside Today shows the **Easy Apply streak**: a date qualifies at **20
+  Easy Apply applications**, independently of the combined daily goal and
+  external/form counts. The ring fills with today's Easy Apply count / 20,
+  capped at 100%. Its center shows the consecutive qualifying-day count; an
+  unfinished today keeps yesterday's streak, and joins it immediately at 20.
+  Missing/under-target completed dates break the streak. Historical edits and
+  undo recompute it from the retained assigned dates; no records are migrated.
 - **Usage:** day navigation, calendar, reviewed count adjustments, 7/15/30-day
   charts, fixed-period totals, hourly totals, entry editing, and deletion review.
 - **Alerts:** the existing quiet progress inbox, read/clear controls, and pause.
 - **Settings:** optional launch at login, pinning, menu count/percentage/icon,
-  optional macOS banners, six sounds plus silence, JSON/CSV export, JSON restore,
+  time-zone selection and 12/24-hour clock, optional macOS banners, six sounds plus silence, JSON/CSV export, JSON restore,
   owner session (connected build only), and Quit.
 
 The six sounds are Soft chime, macOS Glass, Bell, Ripple, Marimba, and Stardust.
@@ -86,7 +102,20 @@ sound; historical cards do not replay on each launch. Banners are optional and
 require macOS notification approval. Focus and your output volume affect what
 you hear. There is no delivery while the app is quit or the Mac is asleep.
 
-All application days remain UTC (00:00 UTC / 05:30 IST). A dot after the menu
+Entry, alert, backup, and comparison-boundary times default to **India Standard
+Time (Asia/Kolkata, GMT+05:30)** with an **AM/PM** clock. Settings → Time & date
+display accepts an IANA city time zone (and the aliases IST, India, or GMT+5:30)
+and offers a 24-hour toggle. The selected zone follows daylight-saving changes.
+Native preferences live in UserDefaults, survive app updates/restarts, and are
+broadcast to the menu panel and floating window. The web app saves the same
+preferences locally and shares them across tabs. The hourly activity chart uses
+the selected zone and format; entry rows show the local logging date, with a
+separate assigned-date note when it differs from the saved application date.
+
+This is a display preference, not a history migration: original timestamps,
+assigned application dates, IDs, goals, backups, and daily totals are unchanged.
+Application-day accounting still uses its saved UTC dates (00:00 UTC / 05:30 IST).
+A dot after the menu
 count indicates a cached/pending state; **Saved** still requires a server
 acknowledgment in the connected build. The local beta commits through IndexedDB
 transactions and idempotency receipts; it works even with no network on first
@@ -160,10 +189,12 @@ npm run build
   `~/Library/WebKit/dev.dumpydon.ApplyVigil/` and its application-support data.
 - Preferences and delivered-alert receipts: this app's UserDefaults domain.
 
-Only the connected build uses the existing Cloudflare service for records.
+The connected build uses the Cloudflare service for live tracker records.
+The public build can optionally upload full-history versions to a private
+workspace through the separate, device-scoped backup API.
 The public build uses `apply-vigil-device-records-v1` and
 `apply-vigil-local-cache-v1` IndexedDB databases in its separate WebKit store,
-has no owner session, and blocks native API requests. It adds no
+has no live owner-tracker session, and blocks owner-tracker API requests. It adds no
 telemetry, localhost listener, agent-account scanning, or new backend. Its bridge
 allows only the existing workspace API routes, rejects redirects, and keeps
 cookies out of JavaScript. Only the bundled local page can call it; remote
@@ -182,3 +213,65 @@ mode and a separate bundle identity. They contain no owner data or credentials.
 The first beta is ad-hoc signed, with manual first-open approval and manual
 updates. See [release procedure](releases.md) for verification and compatibility
 limits, and the [download-page design](download-page.md) for public hosting.
+
+## Local history protection (beta 3)
+
+The public local build mirrors every committed snapshot and operation receipt
+into a checksum-verified native safety copy **before reporting Saved**. The
+native vault lives at `~/Library/Application Support/ApplyVigil/HistoryBackups/`,
+independently of the bundle location and WebKit origin. Each file is private to
+the current macOS user. Atomic replacement, file synchronization, checksums, and
+an entry-ID guard protect existing copies from incomplete or stale writes.
+
+A missing, damaged, or rolled-back local primary snapshot can be restored from
+the newest verified native image, including operation receipts so retries remain
+idempotent. An incompatible split is stopped for a reviewed merge rather than
+silently overwriting either side. Recovery produces a persistent visible notice.
+The generic cache also refuses incomplete incoming snapshots in connected mode.
+
+Settings → Data → History protection shows the workspace mode, last safety copy, and
+saved versions. Recover history previews a missing-ID merge that retains current
+record values and the current goal, restores only earlier historical goals, and
+keeps deletion flags. The local merge is atomic. A separate-workspace choice is
+required when an older history is detected beside a fresh local store. The
+installer rejects local/connected identity changes without an explicit flag.
+
+Automatic versions include the full history; records never expire at Sunday,
+month, or year boundaries. The vault retains up to 48 recent versions and 90 days
+of daily versions, plus the latest committed primary image per mode. A new day
+creates a daily version even if the counts are unchanged. Working copies retain
+projected pending changes and draft metadata for diagnostics; normal durable
+queue/draft storage remains in IndexedDB. Damaged copies are excluded from
+recovery and reported rather than used as empty history.
+
+These copies protect against app-storage loss, not failure or loss of the entire
+Mac. Keep a manual JSON export on another device or a separately managed backup.
+No Keychain, telemetry, paid service, or new cloud database is involved.
+
+Verification: `npm run macos:test:history`, `npm run macos:test`, and
+`npm run macos:test -- --local`. The local native smoke test deliberately removes
+its isolated primary snapshot and verifies automatic recovery; personal stores
+and the production service are never used by these tests.
+
+## Optional cloud backup (beta 3)
+
+Local saving remains available without an account. Connect a private Vigil
+workspace you own in Settings → Data. The native host authenticates once and
+stores a revocable backup-device credential in
+`~/Library/Application Support/ApplyVigil/CloudBackup/device.json` with mode 0600
+in a mode-0700 directory. The password is not retained; Keychain is not used.
+This is private filesystem storage, not application-level encryption.
+
+After a local save, the app uploads a full-history version, downloads it,
+checks SHA-256, and compares the content. Only then does **Backed up** indicate
+the latest local revision is verified online. **On this Mac** reports the local
+save independently. Network failures show backup attention/pending while local
+logging continues. Retries run while the app is open and after reopening.
+
+Cloud copies retain 24 recent versions and daily copies for 90 days; the latest
+full history does not expire with the calendar. Recover cloud copy previews
+a missing-ID merge, preserving existing edits, deletion flags, and current goals.
+Reconnect with owner sign-in to review backups belonging to earlier paired
+devices during that app session. Device credentials cannot access or mutate
+the live owner tracker. Disconnect revokes this Mac's token without deleting
+its cloud backup history. There is no automatic bidirectional web/Mac sync.

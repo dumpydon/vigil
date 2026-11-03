@@ -10,7 +10,7 @@
   <a href="https://vigil.dumpydon.workers.dev/install/">Install guide</a> &nbsp;·&nbsp;
   <a href="https://github.com/dumpydon/vigil/releases">Releases &amp; checksums</a>
 </p>
-<p align="center"><sub>Beta 2 · macOS 13+ · Apple Silicon &amp; Intel · No account or login Keychain access</sub></p>
+<p align="center"><sub>Beta 3 · macOS 13+ · Apple Silicon &amp; Intel · No account or login Keychain access</sub></p>
 
 <a href="https://vigil.dumpydon.workers.dev/">
   <img src="docs/images/apply-vigil-demo.gif" alt="Apply Vigil in action: menu bar, floating window, application counts, and progress alerts" width="1280">
@@ -22,16 +22,21 @@
 | | Apply Vigil for Mac | Vigil on the web |
 | :-- | :-- | :-- |
 | Experience | Menu bar + floating window; no Dock icon | Browser dashboard + compact view |
-| Data & access | Local to your Mac; no account needed | Private owner workspace; sign-in, cloud sync & offline cache |
+| Data & access | Local saving + automatic safety copies; optional private cloud backup | Private owner workspace; sign-in, cloud sync & offline cache |
+
+ZIP downloads: [Apple Silicon](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.3/ApplyVigil-1.0.0-beta.3-arm64.zip) · [Intel](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.3/ApplyVigil-1.0.0-beta.3-x64.zip)
 
 ## What it does
 
 - **Quick logging:** +1, +2, +3, +5, custom counts, and mixed batches.
-- **Clear progress:** daily goals, UTC history, 7/15/30-day charts, and streaks.
-- **Easy corrections:** edit past counts, undo entries, and restore JSON backups.
+- **Clear progress:** daily goals, a green Rhythm heat map, rolling averages, and 20-Easy-Apply streaks.
+- **Easy corrections:** edit past counts, undo entries, and restore local or verified cloud backups.
 - **Quiet updates:** progress alerts, optional sounds, and JSON/CSV exports.
+- **Your clock:** India time by default, configurable time zone, and AM/PM or 24-hour display.
 
 Log LinkedIn Easy Apply and external/form applications separately. Counts are entered manually; Vigil does not apply for you or access your LinkedIn account.
+
+Cloud backup is optional and requires a private Vigil workspace you own. Public installers contain no account credentials or personal history.
 
 ## First launch on macOS
 

@@ -3,6 +3,7 @@ import type {AlertSound} from './sounds'
 export interface DesktopSettings {
   launchAtLogin:boolean
   loginStatus:string
+  loginError?:string
   notifications:boolean
   notificationStatus:string
   sound:AlertSound

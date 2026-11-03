@@ -32,7 +32,7 @@ jobs:
       - run: npm run typecheck
       - name: Verify native sessions never use Keychain
         if: matrix.architecture == 'arm64'
-        run: npm run macos:test:session
+        run: npm run macos:test:session && npm run macos:test:history
       - name: Keep the connected owner build working
         if: matrix.architecture == 'arm64'
         run: |

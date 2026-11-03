@@ -1,6 +1,7 @@
 import { assertUuid, canonical, importPreview, makeBackup, planDayAdjustment, shiftDay, utcDay, validateBackup, validateMutation, ValidationError, type Entry, type Goal, type Mutation, type Snapshot } from '../shared/model'
 import { cookieName, cookieToken, hmac, requireOwner, safeOrigin, sessionCookie, SESSION_SECONDS, sha, verifyPassword, type Env } from './security'
 import {siteRoute} from '../shared/routes'
+import {backupRoute} from './backups'
 
 type Row={id:string;date:string;easy:number;external:number;logged_at:string;created_at:string;updated_at:string;version:number;deleted:number;backdated:number}
 const entryJson="json_object('id',id,'date',date,'easy',easy,'external',external,'loggedAt',logged_at,'createdAt',created_at,'updatedAt',updated_at,'version',version,'deleted',json(CASE WHEN deleted=1 THEN 'true' ELSE 'false' END),'backdated',json(CASE WHEN backdated=1 THEN 'true' ELSE 'false' END))"
@@ -123,6 +124,8 @@ export function createHandler(clock:()=>Date=()=>new Date()){
         return new Response(asset.body,{status:asset.status,headers})
       }
       if(request.method!=='GET'&&!safeOrigin(request))return response({error:'Use a same-origin JSON request.'},403)
+      const backupResponse=await backupRoute(request,env,now)
+      if(backupResponse)return backupResponse
       if(url.pathname==='/api/login'&&request.method==='POST')return await login(request,env,now)
       if(url.pathname==='/api/logout'&&request.method==='POST'){
         const input=await body(request,1024) as {id:string};assertUuid(input.id)

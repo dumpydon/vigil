@@ -1,7 +1,8 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { periodSummary, type PeriodWindow, type UnavailableReason } from '../../shared/periods'
 import type { Snapshot } from '../../shared/model'
-import { longDate } from '../utils/format'
+import useTimePreferences from '../hooks/useTimePreferences'
+import {timestampLabel} from '../utils/time'
 
 const number=(n:number)=>n.toLocaleString('en')
 const reasonText=(reason:UnavailableReason)=>reason==='not-enough-history'?'Not enough history':'Data unavailable'
@@ -9,9 +10,9 @@ function countDescription(window:PeriodWindow) {
   if(!window.counts)return reasonText(window.unavailableReason!)
   return `${number(window.counts.total)} ${window.historyComplete?'applications':'recorded applications · partial history'}`
 }
-function boundary(iso:string){return `${longDate(iso.slice(0,10))} ${iso.slice(11,19)} UTC`}
 function WindowDetails({label,window}:{label:string;window:PeriodWindow}) {
-  return <div className="period-window"><strong>{label}: {countDescription(window)}</strong><span>{boundary(window.start)} → {boundary(window.end)}{window.endInclusive?' (through now)':' (end excluded)'}</span></div>
+  const preferences=useTimePreferences()
+  return <div className="period-window"><strong>{label}: {countDescription(window)}</strong><span>{timestampLabel(window.start,preferences)} → {timestampLabel(window.end,preferences)}{window.endInclusive?' (through now)':' (end excluded)'}</span></div>
 }
 
 export default function PeriodSummary({snapshot}:{snapshot:Snapshot}) {

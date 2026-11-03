@@ -4,7 +4,7 @@
 
 Apply Vigil's Swift/AppKit host bundles this same React application inside
 WebKit. Its menu bar dashboard and floating compact panel share one WebKit data
-store, IndexedDB queue, operation lease, Keychain owner session, and the existing
+store, IndexedDB queue, operation lease, process-only owner session, and the existing
 Cloudflare API. Neither surface needs a browser tab or development server.
 The native bridge accepts only the known API paths and methods, blocks remote
 navigation/redirects, and handles native file dialogs, sounds, notifications,
@@ -34,11 +34,30 @@ The default goal is 75. A goal override applies to one day; a future-default cha
 
 Past-day changes require a before/after confirmation. Day adjustments are atomic. If another tab changes a day during review, the save is rejected so the owner can review its latest counts. Reductions update the newest entries first; increases create one backdated entry.
 
+## Rhythm activity calendar
+
+Usage includes a month-separated activity heat map. Its headline totals the last
+90 saved UTC application dates, including today, independently of the daily
+chart's selected range. The calendar opens at that window; horizontal scrolling
+reveals earlier months. Six months are loaded initially; **Load earlier months**
+prepends six more while retaining the current scroll position. This rendering
+limit never truncates stored history, 90-day totals, or all-time streaks.
+Dates before tracking began are identified, and future dates are
+blank. Hover or keyboard focus shows one date's total, Easy Apply, and form counts.
+
+Colors use stable daily-total bands: zero, 1–9, 10–19, 20–39, and 40 or more.
+The busiest weekday uses totals within the last 90 days and preserves ties.
+Longest streak uses the full tracked history and the same 20-Easy-Apply-per-day
+threshold as Home; external applications and daily goal changes do not qualify
+streak dates. Deleted records are excluded and backdated records use their saved
+application dates. This view derives from the projected snapshot, so retained
+changes update it immediately; it adds no database, network requests, or storage.
+
 ## Quiet in-app alerts
 
 Alerts reuse the existing IndexedDB cache's `meta` store under `ui.alerts.v1`. No database, schema migration, Worker binding, service, or dependency is added. Read state and pauses stay on the device; BroadcastChannel shares changes between tabs in the same browser profile.
 
-While Vigil is open, fresh saved counts can generate a daily overview, halfway progress, goal completion, or an evening check-in. Other categories celebrate a return after two empty UTC days, a new best completed day after at least a week of prior tracking, and total-application milestones (100, 250, 500, 1,000, 2,500, 5,000, then every 10,000). Only the highest milestone crossed today is considered, with at most one milestone notification per day. Goal streaks of 3, 7, 14, and multiples of 30 days replace the ordinary completion message. A Monday recap replaces that day's opening update when a complete tracked week is available, unless goal completion takes priority.
+While Vigil is open, fresh saved counts can generate a daily overview, halfway progress, goal completion, or an evening check-in. Other categories celebrate a return after two empty UTC days, a new best completed day after at least a week of prior tracking, and total-application milestones (100, 250, 500, 1,000, 2,500, 5,000, then every 10,000). Only the highest milestone crossed today is considered, with at most one milestone notification per day. When the combined daily goal is completed, an Easy Apply streak milestone (3, 7, 14, or a multiple of 30 days) replaces the ordinary completion message. Streak dates qualify at 20 Easy Apply applications; external/form counts and historical combined-goal values do not qualify a date. Today must also reach 20 to receive that streak celebration. A Monday recap replaces that day's opening update when a complete tracked week is available, unless goal completion takes priority.
 
 Generation is capped at three alerts per UTC day and 21 in a rolling seven-day window. The third daily slot is reserved for goal completion until the goal is met. Routine updates are at least two hours apart; completion can appear immediately. The evening check-in uses device-local hours from 18:00 to 22:00 and waits at least four hours after the last daily alert. On first opening, the most relevant eligible update replaces a generic overview, preventing a burst of messages. Clearing read cards preserves a small receipt ledger so it cannot reset these limits.
 
@@ -71,3 +90,26 @@ Localhost and production are separate origins with separate cookies, IndexedDB, 
 | `tests/` | Isolated model, API, sync, and browser-lifecycle tests |
 
 Builds generate an app-shell service worker. The local dev server disables it. Visual styles use the existing 60% app scale independently of browser zoom.
+
+## Optional native cloud backup
+
+The public Mac build continues to save locally without an account. After an
+explicit connection to a private Vigil workspace, it uploads full-history
+versions through `/api/backups`. Pairing requires owner sign-in. D1 stores
+only a hash of the revocable device token; the Mac retains the token in a
+private Application Support file (directory 0700, file 0600), without Keychain.
+This is filesystem access protection, not application-level encryption.
+
+The device token is limited to its own backups and cannot mutate the owner
+tracker. Uploads are revision-checked, transactional, and split into bounded
+chunks. Missing record IDs and stale revisions are rejected; deletions remain
+as retained records. The Mac downloads the saved copy, verifies SHA-256, and
+compares its content before showing Backed up. Local saving remains usable if
+the service is unavailable. Uploads retry while the app is open and resume on
+relaunch. Backups do not provide live bidirectional web/Mac synchronization.
+
+Cloud versions retain the latest 24 copies and daily versions for 90 days; each
+copy contains the full history. Recovery uses the existing reviewed missing-ID
+merge. A fresh owner connection permits recovery of earlier devices' copies
+during that app session. Existing cloud tracker records are separate and must
+be compared before a reviewed merge. Apply migration 0005 before deploying.

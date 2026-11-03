@@ -1,5 +1,7 @@
-type Name='today'|'history'|'settings'|'compact'|'popout'|'undo'|'close'|'arrow'|'calendar'|'download'|'upload'|'logout'|'edit'|'bell'|'clock'|'trash'|'gauge'|'goal-check'|'check'|'pin'
+type Name='today'|'history'|'settings'|'compact'|'popout'|'undo'|'close'|'arrow'|'calendar'|'download'|'upload'|'logout'|'edit'|'bell'|'clock'|'trash'|'gauge'|'goal-check'|'check'|'pin'|'play'|'folder'
 const paths:Record<Exclude<Name,'settings'>,string[]>={
+  folder:['M3 7V4h6l2 3h10v13H3Z'],
+  play:['m9 5 11 7-11 7Z'],
   pin:['m16 3 5 5-4 1-4 5v3l-2-2-6 6','m11 3 10 10','m11 3-1 4-4 4H3l10 10'],
   today:['M3 10 12 3l9 7','M5 9v12h14V9','M9 21v-8h6v8'],history:['M4 20V10','M10 20V4','M16 20v-8','M22 20H2'],
   compact:['M4 4h16v16H4Z','M4 9h16','M9 9v11'],

@@ -4,8 +4,11 @@ import {engine,type SyncStatus} from '../data/store'
 import type {Snapshot} from '../../shared/model'
 import {alertSnapshotNeedsRefresh} from '../utils/notifications'
 import {isNative,isLocalOnly} from '../desktop/bridge'
+import useTimePreferences from './useTimePreferences'
+import {zonedHour} from '../utils/time'
 
 export default function useAlerts(snapshot:Snapshot|null,status:SyncStatus,enabled=true){
+  const {timeZone}=useTimePreferences()
   const alerts=useSyncExternalStore(alertsStore.subscribe,alertsStore.getState)
   const [now,setNow]=useState(()=>new Date())
   useEffect(()=>{
@@ -23,8 +26,8 @@ export default function useAlerts(snapshot:Snapshot|null,status:SyncStatus,enabl
   useEffect(()=>{
     if(enabled&&snapshot&&status==='saved'){
       const current=new Date()
-      void alertsStore.generate(snapshot,current,current.getHours())
+      void alertsStore.generate(snapshot,current,zonedHour(current,timeZone))
     }
-  },[enabled,snapshot,status,now,alerts.pausedOn])
+  },[enabled,snapshot,status,now,alerts.pausedOn,timeZone])
   return {...alerts,now,unread:alerts.items.filter(item=>!item.readAt).length}
 }

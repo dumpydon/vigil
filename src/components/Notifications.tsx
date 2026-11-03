@@ -3,8 +3,10 @@ import {utcDay} from '../../shared/model'
 import {alertsStore,type AlertsState} from '../data/alerts'
 import {alertTime} from '../utils/notifications'
 import Icon from './Icon'
+import useTimePreferences from '../hooks/useTimePreferences'
 
 export default function Notifications({state,now}:{state:AlertsState;now:Date}){
+  const preferences=useTimePreferences()
   const [tab,setTab]=useState<'alerts'|'activity'>('alerts'),[visible,setVisible]=useState(12),id=useId()
   const unread=state.items.filter(item=>!item.readAt),paused=state.pausedOn===utcDay(now)
   const items=[...(tab==='activity'?state.items.filter(item=>item.readAt):state.items)].sort((a,b)=>b.createdAt.localeCompare(a.createdAt)||b.id.localeCompare(a.id))
@@ -28,7 +30,7 @@ export default function Notifications({state,now}:{state:AlertsState;now:Date}){
     {state.error&&<p className="alerts-error" role="alert">{state.error}</p>}
     <div role="tabpanel" id={`${id}-list`} aria-labelledby={`${id}-${tab}`}>
       {!state.ready?<p className="alerts-empty">Loading alerts…</p>:!items.length?<div className="alerts-empty"><Icon name="bell" size={25}/><strong>{tab==='alerts'?'All caught up':'Nothing read yet'}</strong><span>{tab==='alerts'?'New goal updates will appear here.':'Read alerts will appear here.'}</span></div>:<ul className="alerts-list">{items.slice(0,visible).map(item=>{
-        const time=alertTime(item.createdAt,now)
+        const time=alertTime(item.createdAt,now,preferences)
         return <li key={item.id} className={`alert-card ${item.tone}${item.readAt?' read':''}`}>
           <span className="alert-icon"><Icon name={['goal','streak','record','milestone'].includes(item.kind)?'goal-check':item.kind==='weekly'?'history':item.kind==='comeback'?'arrow':'gauge'} size={21}/></span>
           <div className="alert-copy"><strong>{item.title}</strong><p>{item.detail}</p></div>

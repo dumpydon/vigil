@@ -4,6 +4,8 @@ import {desktopFetcher,isNative,isDesktopPreview,isLocalOnly} from '../desktop/b
 import {previewFetcher} from '../desktop/preview'
 import {endpoint,project,replaceGoal} from './operations'
 import {LocalWorkspace} from './local-workspace'
+import {nativeHistorySafety} from '../desktop/history'
+import {historyMissingFrom} from './history-protection'
 
 export type QueueRecord={operation:Mutation;sequence:number;status:'pending'|'inflight'|'conflict'|'invalid';error?:string;cloudEntry?:Entry|null;cloudGoal?:number}
 type Lease={owner:string;until:number}
@@ -97,6 +99,10 @@ export class SyncEngine {
     const incoming=await r.json() as Snapshot
     if(sequence!==this.refreshSequence)return
     const tx=this.db.transaction(['meta','queue'],'readwrite'),old=await tx.objectStore('meta').get('snapshot') as Snapshot|undefined
+    if(old&&historyMissingFrom(incoming,old)){
+      await tx.done
+      throw new Error('History protection stopped an incomplete history from replacing your cached records. Open Settings → History protection to review your backups.')
+    }
     if(!old||incoming.revision>=old.revision){
       await tx.objectStore('meta').put(incoming,'snapshot')
       for(const id of incoming.acknowledged??[])await tx.objectStore('queue').delete(id)
@@ -297,12 +303,21 @@ export class SyncEngine {
     }catch(error){try{tx.abort()}catch{/* Already closed. */}throw new Error(error instanceof Error?error.message:'Import could not be retained. Nothing was imported.')}
     await this.reloadLocal();this.emit({status:this.options.online()?'saving':'offline',error:null});this.broadcast();void this.sync()
   }
+  async recoverLocalHistory(backup:import('../../shared/model').Backup){
+    if(!this.options.localOnly)throw new Error('Automatic local recovery is available only in the local workspace.')
+    if(this.running)await this.running
+    await this.reloadLocal()
+    if(this.state.queue.length)throw new Error('Finish saving pending changes before recovering another history. They remain retained on this device.')
+    const response=await this.request('/api/local/recover',{method:'POST',body:JSON.stringify(backup)})
+    if(!response.ok)throw new Error('The local history could not be recovered. Existing safety copies remain available.')
+    await this.sync()
+  }
   dispose(){
     if(this.retryTimer)clearTimeout(this.retryTimer)
     this.channel?.close();this.db?.close()
     if(typeof window!=='undefined'){window.removeEventListener('focus',this.wake);window.removeEventListener('online',this.wake);window.removeEventListener('offline',this.wentOffline);document.removeEventListener('visibilitychange',this.visibility)}
   }
 }
-export const engine=new SyncEngine(isLocalOnly?{name:'apply-vigil-local-cache-v1',fetcher:new LocalWorkspace().fetcher,localOnly:true}:isNative?{fetcher:desktopFetcher}:isDesktopPreview?{name:'apply-vigil-isolated-preview',fetcher:previewFetcher()}: {})
+export const engine=new SyncEngine(isLocalOnly?{name:'apply-vigil-local-cache-v1',fetcher:new LocalWorkspace(undefined,undefined,nativeHistorySafety).fetcher,localOnly:true}:isNative?{fetcher:desktopFetcher}:isDesktopPreview?{name:'apply-vigil-isolated-preview',fetcher:previewFetcher()}: {})
 // Storage/sync code needs a clean instance on a development update. Durable state survives reload.
 if(import.meta.hot)import.meta.hot.accept(()=>location.reload())

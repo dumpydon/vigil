@@ -4,10 +4,10 @@ import { longDate, shortDate } from '../utils/format'
 
 const number=(n:number)=>n.toLocaleString('en')
 function topPath(x:number,y:number,w:number,h:number){const r=Math.min(8,w/2,h);return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`}
-export default function Chart({series,selected,onSelect}:{series:Daily[];selected:string|null;onSelect:(day:string)=>void}){
+export default function Chart({series,selected,onSelect,plotHeight=264}:{series:Daily[];selected:string|null;onSelect:(day:string)=>void;plotHeight?:number}){
   const ref=useRef<HTMLDivElement>(null),id=useId().replace(/[^a-z0-9]/gi,''),[width,setWidth]=useState(820),[hot,setHot]=useState<number|null>(null),[pinned,setPinned]=useState(false)
   useEffect(()=>{if(!ref.current)return;const ro=new ResizeObserver(([entry])=>setWidth(Math.max(260,entry.contentRect.width)));ro.observe(ref.current);return()=>ro.disconnect()},[])
-  const gutter=36,right=8,plotWidth=width-gutter-right,plotHeight=264,top=16,bottom=top+plotHeight,slot=plotWidth/series.length,chartHeight=bottom+42
+  const gutter=36,right=8,plotWidth=width-gutter-right,top=16,bottom=top+plotHeight,slot=plotWidth/series.length,chartHeight=bottom+42
   const hasGoal=(d:Daily)=>d.tracking&&Number.isFinite(d.goal)&&d.goal>0
   const maximum=25*Math.ceil(Math.max(25,...series.map(d=>Math.max(d.total,hasGoal(d)?d.goal:0)))/25),barWidth=slot*.88
   const barGap=slot-barWidth,focusStroke=Math.min(1.5,barGap),focusPadding=Math.min(2,(barGap-focusStroke)/2)

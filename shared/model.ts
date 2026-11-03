@@ -1,6 +1,7 @@
 export const MAX_COUNT = 10_000
 export const FIRST_DAY = '1970-01-01'
 export const DEFAULT_GOAL = 75
+export const EASY_STREAK_TARGET = 20
 export type Day = string
 export interface Entry {
   id: string; date: Day; easy: number; external: number; loggedAt: string
@@ -171,15 +172,22 @@ export function seriesFor(snapshot:Snapshot,days:number,today:Day):Daily[] {
     return {date,...t,total:t.easy+t.external,goal:goalFor(snapshot,date),tracking:date>=snapshot.trackingStart}
   })
 }
+export function easyApplyStreak(snapshot:Pick<Snapshot,'entries'|'trackingStart'>,today:Day){
+  const totals=totalsByDay(snapshot.entries),todayEasy=totals.get(today)?.easy??0
+  const reached=todayEasy>=EASY_STREAK_TARGET
+  // An unfinished today does not break yesterday's completed streak. Missing
+  // calendar days do break it; the chart's selected range never limits it.
+  let cursor=reached?today:shiftDay(today,-1),days=0
+  while(cursor>=snapshot.trackingStart&&(totals.get(cursor)?.easy??0)>=EASY_STREAK_TARGET){days++;cursor=shiftDay(cursor,-1)}
+  return {days,todayEasy,target:EASY_STREAK_TARGET,reached,fraction:Math.min(todayEasy/EASY_STREAK_TARGET,1)}
+}
 export function analytics(snapshot:Snapshot,days:number,today:Day) {
   const series=seriesFor(snapshot,days,today),closed=series.filter(x=>x.date<today&&x.tracking)
   const totals=totalsByDay(snapshot.entries)
-  const todayTotal=totals.get(today),met=(date:Day)=>{const t=totals.get(date);return (t?t.easy+t.external:0)>=goalFor(snapshot,date)}
-  let cursor=met(today)?today:shiftDay(today,-1),streak=0
-  while(cursor>=snapshot.trackingStart&&met(cursor)){streak++;cursor=shiftDay(cursor,-1)}
+  const todayTotal=totals.get(today),easyStreak=easyApplyStreak(snapshot,today)
   const total=todayTotal?todayTotal.easy+todayTotal.external:0,goal=goalFor(snapshot,today)
   return {series,total,goal,remaining:Math.max(goal-total,0),fraction:Math.min(total/goal,1),percentage:total/goal*100,
-    rangeTotal:series.reduce((n,x)=>n+x.total,0),closedAverage:closed.length?closed.reduce((n,x)=>n+x.total,0)/closed.length:null,streak}
+    rangeTotal:series.reduce((n,x)=>n+x.total,0),closedAverage:closed.length?closed.reduce((n,x)=>n+x.total,0)/closed.length:null,streak:easyStreak.days,easyStreak}
 }
 export function hourlyFor(snapshot:Snapshot,day:Day) {
   const hours=Array<number>(24).fill(0);let backdated=0,otherDates=0

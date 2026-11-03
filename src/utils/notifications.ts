@@ -1,4 +1,6 @@
-import {goalFor,shiftDay,totalsByDay,utcDay,type Snapshot} from '../../shared/model'
+import {easyApplyStreak,goalFor,shiftDay,totalsByDay,utcDay,type Snapshot} from '../../shared/model'
+import {clockTime,DEFAULT_TIME_PREFERENCES,timestampLabel,zonedDay,type TimePreferences} from './time'
+import {shortDate} from './format'
 
 export type AlertKind='overview'|'goal'|'reminder'|'weekly'|'halfway'|'streak'|'record'|'milestone'|'comeback'
 export type AlertTone='neutral'|'warning'|'success'
@@ -61,11 +63,10 @@ export function reconcileAlerts(inbox:AlertInbox,snapshot:Snapshot,now:Date,loca
   }
   let candidate:VigilAlert|null=null
   if(total>=goal&&!seen.has(`goal:${today}`)){
-    let streak=0,cursor=today
-    while(cursor>=snapshot.trackingStart&&countFor(cursor)>=goalFor(snapshot,cursor)){streak++;cursor=shiftDay(cursor,-1)}
+    const easyStreak=easyApplyStreak(snapshot,today),streak=easyStreak.reached?easyStreak.days:0
     // A streak celebration is the day's goal notification, not an extra alert.
     candidate=[3,7,14].includes(streak)||(streak>0&&streak%30===0)
-      ?create('streak','success',`${number(streak)}-day goal streak`,`${number(total)} today · ${number(goal)} goal met`,`goal:${today}`)
+      ?create('streak','success',`${number(streak)}-day Easy Apply streak`,`${number(easyStreak.todayEasy)} Easy Apply today · 20/day streak target`,`goal:${today}`)
       :create('goal','success','Daily goal reached',`${number(total)} applications · ${number(goal)} goal`)
   }else if(!daily.length){
     const start=shiftDay(today,-7)
@@ -98,11 +99,10 @@ export function reconcileAlerts(inbox:AlertInbox,snapshot:Snapshot,now:Date,loca
   return {...retained,items:[candidate,...items],receipts:[...receipts,{id:candidate.id,createdAt:stamp}]}
 }
 
-export function alertTime(createdAt:string,now:Date):{label:string;absolute:string} {
+export function alertTime(createdAt:string,now:Date,preferences:TimePreferences=DEFAULT_TIME_PREFERENCES):{label:string;absolute:string} {
   const date=new Date(createdAt),minutes=Math.max(0,Math.floor((now.getTime()-date.getTime())/60_000))
   const relative=minutes<1?'just now':minutes<60?`${minutes}m ago`:minutes<1440?`${Math.floor(minutes/60)}h ago`:`${Math.floor(minutes/1440)}d ago`
-  const clock=date.toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',hour12:true})
-  const yesterday=new Date(now);yesterday.setDate(yesterday.getDate()-1)
-  const prefix=date.toDateString()===now.toDateString()?'':date.toDateString()===yesterday.toDateString()?'Yesterday, ':date.toLocaleDateString('en',{month:'short',day:'numeric'})+', '
-  return {label:`${prefix}${clock} · ${relative}`,absolute:date.toLocaleString('en',{dateStyle:'full',timeStyle:'long'})}
+  const today=zonedDay(now,preferences.timeZone),day=zonedDay(date,preferences.timeZone)
+  const prefix=day===today?'':day===shiftDay(today,-1)?'Yesterday, ':shortDate(day)+', '
+  return {label:`${prefix}${clockTime(date,preferences)} · ${relative}`,absolute:timestampLabel(date,preferences)}
 }

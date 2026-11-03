@@ -1,6 +1,8 @@
 import {openDB,type DBSchema} from 'idb'
-import {canonical,DEFAULT_GOAL,FIRST_DAY,utcDay,validateMutation,ValidationError,type Mutation,type MutationResult,type Snapshot} from '../../shared/model'
+import {canonical,DEFAULT_GOAL,FIRST_DAY,makeBackup,utcDay,validateBackup,validateMutation,ValidationError,type Backup,type Mutation,type MutationResult,type Snapshot} from '../../shared/model'
 import {endpoint,project} from './operations'
+import {historyMissingFrom,validateHistoryImage,type LocalHistoryImage,type LocalHistorySafety} from './history-protection'
+import {recoveryPreview} from '../utils/recovery'
 
 interface DeviceRecords extends DBSchema {
   meta:{key:string;value:Snapshot}
@@ -12,14 +14,86 @@ const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,
 // adapter never calls fetch, creates a session, or reads the owner's workspace.
 export class LocalWorkspace {
   private db
-  constructor(name='apply-vigil-device-records-v1',private clock:()=>Date=()=>new Date()){
+  private boot:Promise<void>|null=null
+  private protectedImage:LocalHistoryImage|null=null
+  constructor(name='apply-vigil-device-records-v1',private clock:()=>Date=()=>new Date(),private safety?:LocalHistorySafety){
     this.db=openDB<DeviceRecords>(name,1,{upgrade(db){db.createObjectStore('meta');db.createObjectStore('receipts')}})
+  }
+  private async initialize(){
+    if(this.boot)return this.boot
+    this.boot=this.recoverPrimary().catch(error=>{this.boot=null;throw error})
+    return this.boot
+  }
+  private async recoverPrimary(){
+    if(!this.safety)return
+    const db=await this.db,stored=await db.get('meta','snapshot'),saved=await this.safety.load()
+    const image=saved.image?validateHistoryImage(saved.image,utcDay(this.clock())):null
+    this.protectedImage=image
+    let valid=!!stored
+    if(stored){try{validateHistoryImage({snapshot:stored,receipts:[]},utcDay(this.clock()))}catch{valid=false}}
+    if(!image&&saved.needsHistoryChoice&&(!stored||valid&&stored.entries.length===0&&stored.revision===0))throw new Error('History protection: another history was detected. Review it before starting a separate empty history.')
+    if((!stored||!valid)&&!image){
+      if(stored||saved.needsHistoryChoice)throw new Error('History protection: another history or a damaged store was detected. Open History protection to recover it or explicitly start a separate history.')
+      return
+    }
+    if(!image)return
+    const missing=stored&&valid?historyMissingFrom(stored,image.snapshot):true
+    const rolledBack=stored&&valid&&stored.revision<image.snapshot.revision
+    if(!missing&&!rolledBack)return
+    // Never overwrite new records with an older backup. An incompatible split
+    // needs the normal reviewed, missing-ID merge instead of an automatic reset.
+    if(stored&&valid&&historyMissingFrom(image.snapshot,stored))throw new Error('History protection: this store and its safety copy differ. Both are retained; review them in History protection.')
+    const tx=db.transaction(['meta','receipts'],'readwrite')
+    await tx.objectStore('meta').put(image.snapshot,'snapshot')
+    for(const receipt of image.receipts)await tx.objectStore('receipts').put({request:receipt.request,result:receipt.result},receipt.id)
+    await tx.done
+    await this.safety.recovered?.('Your local history was recovered from its independent safety copy. Review the restored dates in History protection. Existing backup versions have been retained.')
+  }
+  private async protect(){
+    if(!this.safety)return
+    const db=await this.db,tx=db.transaction(['meta','receipts'],'readonly')
+    const snapshot=await tx.objectStore('meta').get('snapshot'),keys=await tx.objectStore('receipts').getAllKeys(),values=await tx.objectStore('receipts').getAll()
+    await tx.done
+    if(snapshot){
+      const image={snapshot,receipts:values.map((value,index)=>({id:keys[index],...value}))}
+      await this.safety.save(image)
+      if(!this.protectedImage||image.snapshot.revision>=this.protectedImage.snapshot.revision)this.protectedImage=image
+    }
+  }
+  private async recover(backup:Backup){
+    const now=this.clock(),today=utcDay(now),source=validateBackup(backup,today),db=await this.db,saved=await this.safety?.load()
+    const image=saved?.image?validateHistoryImage(saved.image,today):null
+    const tx=db.transaction(['meta','receipts'],'readwrite'),stored=await tx.objectStore('meta').get('snapshot')
+    let valid=!!stored
+    if(stored){try{validateHistoryImage({snapshot:stored,receipts:[]},today)}catch{valid=false}}
+    let next:Snapshot=stored&&valid?stored:image?.snapshot??{entries:[],policies:[{date:FIRST_DAY,value:DEFAULT_GOAL}],overrides:[],trackingStart:today,revision:0,goalRevision:0,serverNow:now.toISOString()}
+    const sources=image?[makeBackup(image.snapshot,now),source]:[source]
+    for(const candidate of sources){
+      const {backup:prepared,preview}=recoveryPreview(next,candidate,today)
+      for(let index=0;index<Math.max(1,preview.items.length);index+=16){
+        const operation=validateMutation({id:crypto.randomUUID(),type:'import',items:preview.items.slice(index,index+16),trackingStart:prepared.trackingStart},today)
+        next={...project(next,[{operation,sequence:1,status:'pending'}]),revision:next.revision+1,serverNow:now.toISOString()}
+        await tx.objectStore('receipts').put({request:canonical(operation),result:{revision:next.revision,goalRevision:next.goalRevision}},operation.id)
+      }
+    }
+    if(stored&&!valid)await tx.objectStore('meta').put(stored,'damaged-snapshot-before-recovery')
+    await tx.objectStore('meta').put(next,'snapshot');await tx.done
+    this.boot=Promise.resolve();await this.protect()
+    return json({recovered:true})
   }
   fetcher:typeof fetch=async(input,init={})=>{
     const path=String(input),method=init.method??'GET'
     if(!path.startsWith('/api/'))return json({error:'Only local workspace operations are available.'},403)
     if(path==='/api/login'||path==='/api/logout')return json({error:'This local workspace does not need an account.'},400)
+    if(path==='/api/local/recover'&&method==='POST')return this.recover(JSON.parse(String(init.body)))
+    await this.initialize()
     const now=this.clock(),today=utcDay(now),db=await this.db
+    if(this.safety&&this.protectedImage){
+      const current=await db.get('meta','snapshot')
+      let healthy=!!current
+      if(current){try{validateHistoryImage({snapshot:current,receipts:[]},today)}catch{healthy=false}}
+      if(!healthy||current&&historyMissingFrom(current,this.protectedImage.snapshot)||current&&current.revision<this.protectedImage.snapshot.revision)await this.recoverPrimary()
+    }
     const tx=db.transaction(['meta','receipts'],'readwrite')
     const stored=await tx.objectStore('meta').get('snapshot')
     const snapshot:Snapshot=stored??{entries:[],policies:[{date:FIRST_DAY,value:DEFAULT_GOAL}],overrides:[],trackingStart:today,revision:0,goalRevision:0,serverNow:now.toISOString()}
@@ -29,6 +103,7 @@ export class LocalWorkspace {
       const acknowledged:string[]=[]
       for(const id of pending)if(await tx.objectStore('receipts').get(id))acknowledged.push(id)
       await tx.done
+      await this.protect()
       return json({...snapshot,serverNow:now.toISOString(),acknowledged})
     }
     let operation:Mutation
@@ -36,7 +111,7 @@ export class LocalWorkspace {
     const target=endpoint(operation)
     if(target.url!==path||target.method!==method){await tx.done;return json({error:'This local operation does not match its route.'},400)}
     const request=canonical(operation),receipt=await tx.objectStore('receipts').get(operation.id)
-    if(receipt){await tx.done;return receipt.request===request?json(receipt.result):json({error:'This operation ID was already used with different data.',code:'IDEMPOTENCY_MISMATCH'},409)}
+    if(receipt){await tx.done;if(receipt.request===request)await this.protect();return receipt.request===request?json(receipt.result):json({error:'This operation ID was already used with different data.',code:'IDEMPOTENCY_MISMATCH'},409)}
     const entry='entryId'in operation?snapshot.entries.find(e=>e.id===operation.entryId):undefined
     let changed=false
     if(operation.type==='update'||operation.type==='delete')changed=!entry||entry.deleted||entry.version!==operation.expectedVersion
@@ -57,6 +132,7 @@ export class LocalWorkspace {
     await tx.objectStore('meta').put(next,'snapshot')
     await tx.objectStore('receipts').put({request,result},operation.id)
     await tx.done
+    await this.protect()
     return json(result)
   }
   async close(){(await this.db).close()}
