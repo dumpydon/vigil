@@ -1,11 +1,11 @@
 # Apply Vigil public Mac releases
 
-The current public beta is `1.0.0-beta.4` (tag `macos-v1.0.0-beta.4`, bundle version
-5), local-first with optional private cloud backup, ad-hoc signed, and requires macOS 13+. Releases are public at
+The current public beta is `1.0.0-beta.5` (tag `macos-v1.0.0-beta.5`, bundle version
+6), local-first with automatic private cloud backup, ad-hoc signed, and requires macOS 13+. Releases are public at
 <https://github.com/dumpydon/vigil/releases>. Public installers must use the
 `.Local` bundle identity and must never contain credentials or personal records.
 
-## Published beta 4
+## Earlier beta 4
 
 Includes Rhythm at 85% size, six months per load, compact layouts, clock
 settings, local safety copies, and optional private cloud backup. Migration
@@ -13,7 +13,7 @@ settings, local safety copies, and optional private cloud backup. Migration
 public installer hashes match the GitHub release manifest. The connected owner
 Mac has been paired separately; no credentials or personal history are bundled.
 
-## Beta 5 preparation
+## Published beta 5
 
 Beta 5 removes password setup from normal public Mac backups, adds recovery
 files, and makes the local-first build the default. The developer connected
@@ -26,8 +26,9 @@ fields make the automatic backup behavior explicit.
 Checks now include `npm run macos:test:cloud`, which uses an in-process fake
 service and temporary files, including a full identity-loss/recovery simulation.
 The developer also exercised an isolated synthetic identity against production,
-without using or changing personal records. Switch public download metadata only
-after the exact beta 5 artifacts are published and checked.
+without using or changing personal records. Both public architectures pass the
+release checks. Public download metadata uses the manifest downloaded from that
+release, after checking all four published artifacts.
 
 ## Build and validate
 
@@ -53,8 +54,8 @@ permission-preserving ZIPs, and verifies disk-image checksums.
 
 Output under `output/releases/`:
 
-- `ApplyVigil-1.0.0-beta.4-arm64.dmg` and `.zip`
-- `ApplyVigil-1.0.0-beta.4-x64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.5-arm64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.5-x64.dmg` and `.zip`
 - `SHA512SUMS.txt` and `release.json`
 
 Local builds write metadata only under `output/releases/`. They never overwrite
@@ -75,11 +76,11 @@ coverage.
 
 ## Publish
 
-1. Update `macos/release-config.json`, increment `bundleVersion`, update all
-   versioned download links and changelog, and rebuild/verify the installers.
-2. Review and push source, checksums and public metadata. Merge the reviewed
-   source into `main`; production Workers Builds runs `npm run build` and the
-   existing deploy command. Migration 0005 must be applied before deploying the cloud-backup routes.
+1. Update `macos/release-config.json`, increment `bundleVersion`, update release
+   notes and changelog, and run the release checks. Keep published download links
+   on the existing release until the new installers are verified.
+2. Review and push source to a branch. Migration 0005 must already be applied
+   before deploying the cloud-backup routes; beta 5 needs no further migration.
 3. Tag that source with `macos-v<version>`. Update `macos/release-notes.md`, then
    push that tag to start **Publish verified Mac beta**, or dispatch it manually with that existing tag.
    Its read-only build job checks out the immutable tag, reruns shared checks,
@@ -92,7 +93,9 @@ coverage.
    can have different bytes from local packages; publish the CI manifest with
    the CI binaries and deploy that manifest on the site. Download the public
    assets anonymously and compare SHA-512 values to the manifest. Mount each DMG read-only, inspect its app, and verify the signature
-   and executable architecture. Check the ZIP's executable permissions.
+   and executable architecture. Check the ZIP's executable permissions. Update
+   versioned download links and README links, then merge the verified source and
+   metadata into `main`. Production Workers Builds deploys the same Worker.
 5. Verify `/` and the `/download/` redirect, installation guide, tour, preview scrolling, sound samples,
    architecture picker and direct download. Confirm `/api/snapshot` still rejects
    unauthenticated requests and the owner tracker still opens normally.
