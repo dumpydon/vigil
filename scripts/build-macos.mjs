@@ -26,7 +26,7 @@ const run=(executable,args)=>execFileSync(executable,args,{cwd:root,stdio:'inher
 await rm(staging,{recursive:true,force:true})
 await mkdir(web,{recursive:true})
 await mkdir(path.join(staging,'Contents/MacOS'),{recursive:true})
-await build({entryPoints:[path.join(root,'src/main.tsx')],outfile:path.join(web,'app.js'),bundle:true,format:'iife',minify:true,target:'safari16',define:{'import.meta.env.DEV':'false','import.meta.hot':'undefined','process.env.NODE_ENV':'"production"'},legalComments:'eof'})
+await build({entryPoints:[path.join(root,'src/main.tsx')],outfile:path.join(web,'app.js'),bundle:true,format:'iife',minify:true,target:'safari16',define:{'import.meta.env.DEV':'false','import.meta.hot':'undefined','process.env.NODE_ENV':'"production"'},legalComments:'eof',loader:{'.png':'dataurl'}})
 await copyFile(path.join(root,'public/mark.svg'),path.join(web,'mark.svg'))
 await writeFile(path.join(web,'index.html'),`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><title>Apply Vigil</title><link rel="stylesheet" href="app.css"></head><body><div id="root"></div><script src="app.js" defer></script></body></html>`)
 let plist=await readFile(path.join(root,'macos/Info.plist'),'utf8')

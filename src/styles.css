@@ -1077,6 +1077,7 @@ small,.fine-print {
 .modal.settings-modal {width:calc(100vw - 28px);max-width:28rem;padding:1.125rem;background:#181a20;overflow:hidden}
 .settings-modal[open] {display:flex;flex-direction:column}
 .settings-modal .modal-heading {flex-shrink:0;margin-bottom:.875rem}
+.settings-modal .modal-heading h2 {display:flex;align-items:center;gap:.625rem}
 .settings-modal .modal-heading .icon-button {width:1.75rem;height:1.75rem;min-height:1.75rem;margin:0}
 .settings-content {display:flex;flex-direction:column;min-height:0}
 .settings-tabs {display:flex;flex-shrink:0;gap:3px;padding:3px;background:#ffffff06;border:1px solid #ffffff0c;border-radius:10px;margin-bottom:1rem}

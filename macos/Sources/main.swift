@@ -509,6 +509,8 @@ private enum AlertSound: String, CaseIterable {
         throw DesktopError.message("Native check timed out: \(expression) · \(detail)")
     }
     private func checkTimePreferences() async throws {
+        let defaults = await settings()
+        guard defaults["sound"] as? String == "soft" else { throw DesktopError.message("A fresh installation must default to Soft chime") }
         try await waitForTestState("window.__applyVigilTest?.timePreferences().timeZone === 'Asia/Kolkata' && window.__applyVigilTest.timePreferences().clockFormat === '12h'")
         try await waitForTestState("!!document.querySelector('[aria-label=\"Settings\"]')")
         _ = try await evaluate("document.querySelector('[aria-label=\"Settings\"]').click()")

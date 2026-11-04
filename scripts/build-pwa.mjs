@@ -1,6 +1,6 @@
 import { readFile, writeFile, readdir, mkdir, rename } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
-const assets=(await readdir('dist/assets')).filter(n=>/\.(?:js|css)$/.test(n)).map(n=>'/assets/'+n)
+const assets=(await readdir('dist/assets')).filter(n=>/\.(?:js|css|png)$/.test(n)).map(n=>'/assets/'+n)
 await mkdir('dist/dashboard',{recursive:true})
 await rename('dist/index.html','dist/dashboard/index.html')
 const shell=['/dashboard/','/mark.svg','/manifest.webmanifest','/icons/icon-192.png','/icons/icon-512.png','/icons/maskable-512.png','/icons/apple-touch-icon.png',...assets]
