@@ -307,6 +307,14 @@ private enum AlertSound: String, CaseIterable {
         case "historyLoad":
             guard localOnly else { throw DesktopError.message("Only the local workspace uses a local safety image.") }
             return await historyVault.loadLocal()
+        case "googleStart":
+            guard localOnly, !smokeTest else { throw DesktopError.message("Google sign-in is unavailable in this test workspace.") }
+            return try await cloudBackup.googleStart()
+        case "googlePoll": return try await cloudBackup.googlePoll()
+        case "googleCancel": return try cloudBackup.googleCancel()
+        case "googleFinish":
+            guard localOnly, !smokeTest, let choice = data["choice"] as? String else { throw DesktopError.message("Choose a Google backup action.") }
+            return try await cloudBackup.googleFinish(choice: choice)
         case "cloudStatus": return cloudBackup.status()
         case "cloudSetup":
             guard !smokeTest else { return cloudBackup.status() }
@@ -321,9 +329,6 @@ private enum AlertSound: String, CaseIterable {
             fileDialogOpen = true; defer { fileDialogOpen = false }
             return try await cloudBackup.chooseRecoveryFile()
         case "cloudRecoveryApply": return try cloudBackup.applyRecoveryIdentity()
-        case "cloudConnect":
-            guard !smokeTest, let origin = data["origin"] as? String, let password = data["password"] as? String else { throw DesktopError.message("Cloud connection is unavailable in this test or request.") }
-            return try await cloudBackup.connect(origin: origin, password: password)
         case "cloudSave":
             guard let json = data["backupJSON"] as? String, let revision = data["revision"] as? Int, let fingerprint = data["fingerprint"] as? String else { throw DesktopError.message("Invalid cloud backup payload.") }
             let result = await cloudBackup.save(json: json, revision: revision, fingerprint: fingerprint)

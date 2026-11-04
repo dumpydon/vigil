@@ -1,4 +1,4 @@
-export interface Env { DB:D1Database; ASSETS:Fetcher; OWNER_PASSWORD_HASH?:string; SESSION_SECRET?:string }
+export interface Env { DB:D1Database; ASSETS:Fetcher; GOOGLE_CLIENT_ID?:string; GOOGLE_CLIENT_SECRET?:string; OWNER_PASSWORD_HASH?:string; SESSION_SECRET?:string }
 const encoder=new TextEncoder()
 export const SESSION_SECONDS=90*24*60*60
 export const COOKIE='vigil_session'

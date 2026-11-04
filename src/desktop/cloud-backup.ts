@@ -1,9 +1,10 @@
 import {useEffect,useSyncExternalStore} from 'react'
 import {canonical,makeBackup,utcDay,validateBackup,type Backup,type Snapshot} from '../../shared/model'
+import {recoveryIdentityCompatible} from '../utils/recovery'
 import {engine,type AppState} from '../data/store'
 import {desktopCall,isLocalOnly,isNative} from './bridge'
 
-export interface CloudStatus {connected:boolean;phase:'disconnected'|'connecting'|'paused'|'restoring'|'pending'|'uploading'|'backedUp'|'error';origin:string;error:string;identityId?:string;recoveryFileSaved?:boolean;revision:number|null;verifiedAt:string|null;applications:number|null}
+export interface CloudStatus {connected:boolean;phase:'local'|'disconnected'|'connecting'|'paused'|'restoring'|'pending'|'uploading'|'backedUp'|'error';origin:string;error:string;googleEmail?:string;googlePending?:boolean;identityId?:string;recoveryFileSaved?:boolean;revision:number|null;verifiedAt:string|null;applications:number|null}
 const listeners=new Set<()=>void>()
 let current:CloudStatus={connected:false,phase:'disconnected',origin:'',error:'',revision:null,verifiedAt:null,applications:null},initialized:Promise<void>|null=null
 let syncing:Promise<void>|null=null,checkedIdentity:string|null=null,recovering=false
@@ -26,7 +27,7 @@ export const cloudBackup={
     if(syncing)return syncing
     syncing=(async()=>{
       await init()
-      if(current.phase==='paused')return
+      if(current.phase==='paused'||current.phase==='local')return
       if(!current.connected)update(await desktopCall<CloudStatus>('cloudSetup'))
       if(!current.connected)return
       let state=engine.getState()
@@ -57,7 +58,24 @@ export const cloudBackup={
     })
     return syncing
   },
-  async connect(origin:string,password:string){update(await desktopCall<CloudStatus>('cloudConnect',{origin:origin.trim(),password}));checkedIdentity=null;await cloudBackup.sync()},
+  async googleStart(){update(await desktopCall<CloudStatus>('googleStart'))},
+  async googleCancel(){update(await desktopCall<CloudStatus>('googleCancel'))},
+  async googleFinish(choice:'link'|'restore',copy?:{backupJSON:string;revision:number},sameNamespace=false){
+    recovering=true
+    try{
+      if(syncing)await syncing
+      const state=engine.getState(),backup=copy?validateBackup(JSON.parse(copy.backupJSON),utcDay()):null
+      if(state.queue.length)throw new Error('Wait for local changes to save before linking Google.')
+      if(backup&&!recoveryIdentityCompatible(state.snapshot,backup,sameNamespace))throw new Error('This Google account holds a different history. Both histories are kept. Choose the matching account or restore into a fresh workspace.')
+      update(await desktopCall<CloudStatus>('googleFinish',{choice}));checkedIdentity=null
+      if(backup&&copy){
+        const latest=engine.getState()
+        if(latest.queue.length||!recoveryIdentityCompatible(latest.snapshot,backup,sameNamespace))throw new Error('Local history changed during sign-in. Review recovery again; both histories are retained.')
+        await engine.recoverLocalHistory(backup,copy.revision)
+      }
+    }finally{recovering=false}
+    await cloudBackup.sync()
+  },
   async resume(){update(await desktopCall<CloudStatus>('cloudResume'));checkedIdentity=null;await cloudBackup.sync()},
   async refresh(){update(await desktopCall<CloudStatus>('cloudStatus'))},
   async recover(backup:Backup,revision:number,fromRecoveryFile:boolean){

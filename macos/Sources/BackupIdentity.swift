@@ -5,6 +5,8 @@ struct BackupIdentity: Codable, Equatable {
     let token: String
     let origin: String
     var registrationPending: Bool?
+    var namespace: String? = nil
+    var email: String? = nil
 
     static let publicOrigin = "https://vigil.dumpydon.workers.dev"
     static func create() -> BackupIdentity {

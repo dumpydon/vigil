@@ -1,3 +1,4 @@
+import BackupReminder from './components/BackupReminder'
 import HistoryProtection from './components/HistoryProtection'
 import CloudBackupSettings from './components/CloudBackupSettings'
 import {useHistoryProtection} from './desktop/history'
@@ -120,6 +121,7 @@ export default function Dashboard({floating=false,onOpenDashboard}:{floating?:bo
           </>}</>:<>{!compact&&<button className="icon-button" aria-label="Open compact view" title="Compact view" onClick={()=>changeMode('compact')}><Icon name="compact"/></button>}{!floating&&<button className="icon-button popout-button" aria-label="Pop out compact view" aria-pressed={!!floatingWindow} title={floatingWindow?"Focus floating view":"Always-on-top floating view"} disabled={openingFloat} onClick={()=>{void popOut()}}><Icon name="popout"/></button>}</>}
           <button className="icon-button header-settings" aria-label="Open settings" title="Settings" onClick={()=>setDialog({type:'settings'})}><Icon name="settings" size={20}/></button>
         </header>
+        {isLocalOnly&&!floating&&cloud.phase!=='disconnected'&&state.status==='saved'&&<BackupReminder total={totals.reduce((sum,entry)=>sum+entry.easy+entry.external,0)} googleLinked={!!cloud.googleEmail} onConnect={()=>setDialog({type:'settings',tab:'data'})}/>}
         {!isLocalOnly&&!isDesktopPreview&&<div className="connection-note" role="note">Legacy owner workspace · These records are separate from Mac cloud backups. Use Apply Vigil’s recovery file to restore your Mac history.</div>}
         {isNative&&historyNotice&&<div className="connection-note history-safety-notice" role="status">{historyNotice} <button onClick={()=>setDialog({type:'settings',tab:'data'})}>Review history protection</button></div>}
         {isNative&&historyError&&<div className="connection-note history-safety-notice" role="alert">Automatic backup needs attention: {historyError} <button onClick={()=>setDialog({type:'settings',tab:'data'})}>History protection</button></div>}

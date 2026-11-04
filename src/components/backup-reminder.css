@@ -1,0 +1,9 @@
+.backup-reminder{margin:12px 16px;padding:16px;border:1px solid rgba(132,137,255,.28);border-radius:16px;background:linear-gradient(135deg,rgba(132,137,255,.12),rgba(21,23,29,.96));box-shadow:0 8px 28px #0002;color:#f2f3f7;animation:backup-reminder-in .18s ease-out}
+.backup-reminder-copy strong{font-size:15px;font-weight:650;line-height:1.35}
+.backup-reminder-copy p{margin:6px 0 14px;font-size:13px;line-height:1.5;color:#b7bbc8;max-width:48ch}
+.backup-reminder-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.google-backup-button{display:inline-flex;align-items:center;justify-content:center;gap:12px;min-height:40px;padding:10px 14px;background:#131314;color:#e3e3e3;border:1px solid #8e918f;border-radius:20px;font-family:Arial,sans-serif;font-size:14px;font-weight:500;line-height:20px;cursor:pointer}
+.google-backup-button svg{flex:none}.google-backup-button:hover{background:#252628}.google-backup-button:focus-visible,.backup-reminder-later:focus-visible{outline:2px solid #a9adff;outline-offset:3px}.google-backup-button:disabled{opacity:.55;cursor:default}
+.backup-reminder-later{border:0;background:transparent;color:#b7bbc8;padding:10px 8px;font:inherit;font-size:13px;cursor:pointer}
+@keyframes backup-reminder-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.backup-reminder{animation:none}}

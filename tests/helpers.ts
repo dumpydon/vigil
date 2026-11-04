@@ -8,7 +8,7 @@ import { utcDay, type Mutation, type Snapshot } from '../shared/model'
 export async function makeEnvironment(){
   const mf=new Miniflare(convertV4MiniflareOptions({modules:true,script:'export default {fetch(){return new Response("test")}}',d1Databases:{DB:crypto.randomUUID()},compatibilityDate:'2026-10-07'}))
   const db=await mf.getD1Database('DB') as unknown as D1Database
-  for(const name of ['0001_initial.sql','0002_session_generation.sql','0003_auth_receipts.sql','0004_day_adjustments.sql','0005_cloud_backups.sql']){
+  for(const name of ['0001_initial.sql','0002_session_generation.sql','0003_auth_receipts.sql','0004_day_adjustments.sql','0005_cloud_backups.sql','0006_google_backup_accounts.sql']){
     let sql=(await readFile(new URL('../migrations/'+name,import.meta.url),'utf8')).replace(/--[^\n]*/g,'')
     const triggers=[...sql.matchAll(/CREATE TRIGGER[\s\S]*?\nEND;/g)].map(m=>m[0])
     for(const t of triggers)sql=sql.replace(t,'')

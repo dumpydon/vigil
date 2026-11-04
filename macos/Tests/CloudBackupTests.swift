@@ -74,6 +74,14 @@ private final class BackupFixture: URLProtocol {
         defer { try? FileManager.default.removeItem(at: root) }
         do {
             let original = root.appendingPathComponent("original")
+            let fresh = client(original), initialRequests = BackupFixture.paths.count
+            let local = await fresh.setup()
+            try check(local["phase"] as? String == "local", "A new install must start locally")
+            try check(BackupFixture.paths.count == initialRequests, "First launch must make no cloud registration request")
+            try check(!FileManager.default.fileExists(atPath: original.appendingPathComponent("device.json").path), "First launch must not create a cloud key")
+            // Existing beta 5 identities still resume; use one as a fixture.
+            try FileManager.default.createDirectory(at: original, withIntermediateDirectories: true)
+            try JSONEncoder().encode(BackupIdentity.create()).write(to: original.appendingPathComponent("device.json"))
             let first = client(original)
             BackupFixture.failRegistration = true
             let offline = await first.setup()
@@ -86,6 +94,13 @@ private final class BackupFixture: URLProtocol {
             let before = BackupFixture.paths.count
             _ = await client(original).setup()
             try check(BackupFixture.paths.count == before, "An already registered identity must survive restart without a network sign-in")
+            var linkedIdentity = try read(original)
+            linkedIdentity.namespace = linkedIdentity.id; linkedIdentity.email = "person@example.test"
+            try JSONEncoder().encode(linkedIdentity).write(to: original.appendingPathComponent("device.json"))
+            let googleRestart = await client(original).setup()
+            try check(googleRestart["googleEmail"] as? String == "person@example.test", "Google linking must survive app restart")
+            try check(googleRestart["identityId"] as? String == linkedIdentity.namespace, "Restart must keep the same cloud history namespace")
+            try check(BackupFixture.paths.count == before, "Restart must not ask Google to sign in again")
             let mode = (try FileManager.default.attributesOfItem(atPath: original.appendingPathComponent("device.json").path)[.posixPermissions] as? NSNumber)?.intValue
             try check(mode == 0o600, "The retained device credential must be private")
             let raw = "{\"format\":\"vigil-backup\",\"version\":1,\"exportedAt\":\"2026-11-04T00:00:00.000Z\",\"trackingStart\":\"2026-10-06\",\"entries\":[{\"id\":\"fixture\",\"easy\":486,\"external\":0}],\"policies\":[],\"overrides\":[]}"
@@ -96,8 +111,7 @@ private final class BackupFixture: URLProtocol {
             try check(decoded.id == pending.id && decoded.token == pending.token, "The recovery file must preserve the same private identity")
             let emptyInstall = client(root.appendingPathComponent("reinstalled"))
             _ = await emptyInstall.setup()
-            let newId = try read(root.appendingPathComponent("reinstalled")).id
-            try check(newId != pending.id, "A fresh installation must get an independent identity")
+            try check(!FileManager.default.fileExists(atPath: root.appendingPathComponent("reinstalled/device.json").path), "A fresh reinstall must allow recovery without making another identity")
             let review = try await emptyInstall.prepareRecovery(bytes: recoveryFile)
             try check(review["sameIdentity"] as? Bool == false, "Recovery must distinguish existing and imported identities")
             try check((review["copy"] as? [String: Any])?["backupJSON"] as? String == raw, "The correct cloud history must be available after local data loss")
@@ -119,6 +133,13 @@ private final class BackupFixture: URLProtocol {
             let malformedStatus = await client(malformedRoot).setup()
             try check(malformedStatus["phase"] as? String == "error", "A damaged credential must not silently create another identity")
             try check(try Data(contentsOf: malformedRoot.appendingPathComponent("device.json")) == malformed, "The original damaged credential must remain available")
+            let foreignRoot = root.appendingPathComponent("foreign")
+            try FileManager.default.createDirectory(at: foreignRoot, withIntermediateDirectories: true)
+            let foreign = BackupIdentity(id: UUID().uuidString, token: String(repeating: "b", count: 64), origin: "https://private.example", registrationPending: false)
+            try JSONEncoder().encode(foreign).write(to: foreignRoot.appendingPathComponent("device.json"))
+            let requestsBeforeForeign = BackupFixture.paths.count
+            do { _ = try await client(foreignRoot).googleStart(); throw DesktopError.message("A foreign credential must never be sent to the public Google service") }
+            catch { try check(BackupFixture.paths.count == requestsBeforeForeign, "Google linking must not disclose another service's credential") }
             let pausedRoot = root.appendingPathComponent("paused"), paused = client(pausedRoot)
             _ = await paused.setup(); _ = try await paused.disconnect()
             let registrations = BackupFixture.paths.filter { $0 == "/api/backups/register" }.count

@@ -1,3 +1,4 @@
+import {googleBackupFlow} from './google-backup-flow'
 import { assertUuid, canonical, importPreview, makeBackup, planDayAdjustment, shiftDay, utcDay, validateBackup, validateMutation, ValidationError, type Entry, type Goal, type Mutation, type Snapshot } from '../shared/model'
 import { cookieName, cookieToken, hmac, requireOwner, safeOrigin, sessionCookie, SESSION_SECONDS, sha, verifyPassword, type Env } from './security'
 import {siteRoute} from '../shared/routes'
@@ -124,6 +125,8 @@ export function createHandler(clock:()=>Date=()=>new Date()){
         return new Response(asset.body,{status:asset.status,headers})
       }
       if(request.method!=='GET'&&!safeOrigin(request))return response({error:'Use a same-origin JSON request.'},403)
+      const googleResponse=await googleBackupFlow(request,env,now)
+      if(googleResponse)return googleResponse
       const backupResponse=await backupRoute(request,env,now)
       if(backupResponse)return backupResponse
       if(url.pathname==='/api/login'&&request.method==='POST')return await login(request,env,now)

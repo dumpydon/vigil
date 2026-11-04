@@ -5,8 +5,8 @@ application tracker. It runs alongside the coding-agent app called Vigil.
 Two separate flavors share the interface:
 
 - **Public local beta:** `dev.dumpydon.ApplyVigil.Local`, starts empty without an
-  account, stores records on the Mac, and blocks the live owner tracker API. Automatic
-  private cloud backup uses a random identity with no owner password.
+  account, stores records on the Mac, and blocks the live owner tracker API. Optional
+  Google backup links a private cloud history without a Vigil password.
 - **Connected owner build:** `dev.dumpydon.ApplyVigil`, retains the existing
   Cloudflare workspace and offline queue.
 
@@ -41,8 +41,9 @@ reference app's proportions.
 
 The public beta needs no sign-in for local use. **On this Mac** reports local
 saving independently from the **Backed up** cloud indicator.
-A random private identity connects automatically. Settings → Data exports or
-imports its recovery file; no owner password is used for normal Mac backups.
+Fresh installs stay local until Google is linked in Settings → Data. Existing
+backup connections remain usable. Recovery files are an optional spare; no
+owner password is used for normal Mac backups.
 For the connected build, sign in with the web workspace's current owner password.
 Starting with **1.0.0-beta.2**, the development connected build keeps the server-issued token only in
 native process memory. It does not access Keychain or save credentials to disk;
@@ -311,3 +312,17 @@ installer refuses identity changes without an explicit reviewed switch.
 Native recovery checks: `npm run macos:test:cloud` uses an in-process mock service
 and temporary files, tests restart persistence and recovery-file import after
 local identity loss, and never contacts production or prompts for a password.
+
+## Optional Google setup (beta 6)
+
+Settings → Data → Sign in with Google opens the system browser. Confirm the
+Google account, return to Vigil and review Back up this Mac or Restore and
+connect. Routine launches retain the connection. After a full wipe, sign in
+with the same Google account to retrieve and review the cloud history.
+
+New installs do not register or upload until Google linking is chosen. Local
+saving works offline. Small in-app reminders follow lifetime counts through
+100, can be dismissed, and stop once Google is linked. Existing anonymous beta
+5 backups remain available during the transition; linking keeps their original
+namespace and avoids adding counts twice. Password-based native backup setup
+has been removed; the legacy private web workspace still requires its own login.

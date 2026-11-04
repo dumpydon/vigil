@@ -1,19 +1,15 @@
+import {backupAccess} from './backup-access'
 import {assertUuid,canonical,validateBackup,ValidationError} from '../shared/model'
 import {hmac,requireOwner,sha,type Env} from './security'
 
 const headers={'Cache-Control':'no-store, private','Content-Type':'application/json','X-Content-Type-Options':'nosniff','Vary':'Authorization, Cookie'}
 const reply=(value:unknown,status=200)=>Response.json(value,{status,headers})
-type Device={id:string;name:string}
 type Copy={id:string;device_id:string;revision:number;fingerprint:string;sha256:string;applications:number;entries:number;bytes:number;created_at:string}
 async function input(request:Request,maximum:number){
   if(Number(request.headers.get('content-length')??0)>maximum)throw new ValidationError('The cloud backup request is too large.')
   const text=await request.text()
   if(new TextEncoder().encode(text).length>maximum)throw new ValidationError('The cloud backup request is too large.')
   try{return JSON.parse(text)}catch{throw new ValidationError('Send valid JSON.')}
-}
-async function device(request:Request,env:Env):Promise<Device|null>{
-  const match=request.headers.get('authorization')?.match(/^Bearer ([a-f0-9]{64})$/)
-  return match?env.DB.prepare('SELECT id,name FROM backup_devices WHERE token_hash=? AND revoked=0').bind(await sha(match[1])).first<Device>():null
 }
 export async function backupRoute(request:Request,env:Env,now:Date):Promise<Response|null>{
   const path=new URL(request.url).pathname
@@ -43,7 +39,7 @@ export async function backupRoute(request:Request,env:Env,now:Date):Promise<Resp
     if(!registered||registered.revoked)return reply({error:'This device connection was revoked. Start a new connection.'},409)
     return reply({id:value.id,token})
   }
-  const paired=await device(request,env),owner=paired?false:await requireOwner(request,env,now.getTime())
+  const paired=await backupAccess(request,env),owner=paired?false:await requireOwner(request,env,now.getTime())
   if(!paired&&!owner)return reply({error:'Connect a private workspace to access cloud backups.'},401)
   if(path==='/api/backups'&&request.method==='GET'){
     const query=paired?env.DB.prepare('SELECT * FROM cloud_backups WHERE device_id=? ORDER BY revision DESC LIMIT 100').bind(paired.id):env.DB.prepare('SELECT * FROM cloud_backups ORDER BY created_at DESC LIMIT 100')
@@ -51,8 +47,9 @@ export async function backupRoute(request:Request,env:Env,now:Date):Promise<Resp
   }
   const deviceMatch=path.match(/^\/api\/backups\/devices\/([a-f0-9-]{36})$/i)
   if(deviceMatch&&request.method==='DELETE'){
-    if(!owner&&paired?.id!==deviceMatch[1])return reply({error:'Owner sign-in is required to revoke another device.'},403)
-    await env.DB.prepare('UPDATE backup_devices SET revoked=1 WHERE id=?').bind(deviceMatch[1]).run()
+    if(!owner&&(paired?.access_id??paired?.id)!==deviceMatch[1])return reply({error:'Owner sign-in is required to revoke another device.'},403)
+    if(paired?.access_id)await env.DB.prepare('UPDATE google_backup_access SET revoked=1 WHERE id=?').bind(paired.access_id).run()
+    else await env.DB.prepare('UPDATE backup_devices SET revoked=1 WHERE id=?').bind(deviceMatch[1]).run()
     return reply({revoked:true})
   }
   if(path==='/api/backups'&&request.method==='POST'){

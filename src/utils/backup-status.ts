@@ -1,6 +1,7 @@
 import type {CloudStatus} from '../desktop/cloud-backup'
 
 export function backupStatusLabel(status:CloudStatus,localRevision:number,hasPending:boolean){
+  if(status.phase==='local')return 'Set up cloud backup'
   if(status.phase==='paused')return 'Cloud backup off'
   if(status.phase==='error')return 'Backup needs attention'
   if(!status.connected||status.phase==='connecting')return 'Connecting backup…'

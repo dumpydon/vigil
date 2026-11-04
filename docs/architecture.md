@@ -93,26 +93,35 @@ Localhost and production are separate origins with separate cookies, IndexedDB, 
 
 Builds generate an app-shell service worker. The local dev server disables it. Visual styles use the existing 60% app scale independently of browser zoom.
 
-## Optional native cloud backup
+## Optional Google backup (beta 6)
 
-The public Mac build continues to save locally without an account. A new installation
-creates a random identity and access secret before registering through
-`/api/backups/register`. It uploads full-history versions through `/api/backups`,
-without an owner password. Existing paired identities remain valid. D1 stores
-only a hash of the revocable device token; the Mac retains the token in a
-private Application Support file (directory 0700, file 0600), without Keychain.
-This is filesystem access protection, not application-level encryption.
+Fresh Mac installs save locally without creating a cloud identity. After the user
+chooses Google, the native host opens the system browser and retains a private
+short-lived polling key. The Worker uses a one-use state, PKCE and nonce and
+checks Google's signature, issuer, audience and expiry. Only identity scopes
+are requested. The OAuth client secret stays in Cloudflare secret storage.
 
-The device token is limited to its own backups and cannot mutate the owner
-tracker. Uploads are revision-checked, transactional, and split into bounded
-chunks. Missing record IDs and stale revisions are rejected; deletions remain
-as retained records. The Mac downloads the saved copy, verifies SHA-256, and
-compares its content before showing Backed up. Local saving remains usable if
-the service is unavailable. Uploads retry while the app is open and resume on
-relaunch. Backups do not provide live bidirectional web/Mac synchronization.
+Google's stable subject identifies the account; email is display/contact data.
+Each account owns one existing backup namespace. Linking preserves that namespace
+and its records. New device access keys are hashed in D1 and limited to their
+namespace. Revoking one key does not revoke another Mac's key. Legacy beta 5
+connections continue to work. The private owner web tracker remains separate.
 
-Cloud versions retain the latest 24 copies and daily versions for 90 days; each
-copy contains the full history. Recovery uses the existing reviewed missing-ID
-merge. A fresh owner connection permits recovery of earlier devices' copies
-during that app session. Existing cloud tracker records are separate and must
-be compared before a reviewed merge. Apply migration 0005 before deploying.
+The user reviews the account and any existing history in Settings before the
+connection changes. Unrelated or diverging local histories are rejected. A new
+Mac can recover using Google even when its original local key was erased.
+Recovery retains record IDs, deletions and saved goals and advances the revision
+past the recovered copy. Local changes during sign-in are checked again before
+recovery. This is backup and restore, not live concurrent multi-Mac sync.
+
+Local saving remains authoritative during normal use. Uploads retry offline
+changes, download the cloud copy, and verify both digest and content before
+showing Backed up. Versions retain the latest 24 copies and daily copies for
+90 days; each copy contains the full history, and the newest copy does not expire.
+Native credentials use private filesystem storage without Keychain. Google
+link metadata survives restart; routine launches do not start a new sign-in.
+
+Migration 0006 adds Google accounts, device access and expiring sign-in requests
+to the existing Worker/D1 deployment. The milestone reminders use lifetime active
+application totals at 5,10,15,20,30,40,50,60,75,90,100; persisted receipts prevent
+replays on undo or restart. Google linking suppresses them.

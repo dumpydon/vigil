@@ -49,7 +49,7 @@ import UniformTypeIdentifiers
     }
     func status() -> [String: Any] {
         ["connected": connection != nil && connection?.registrationPending != true, "phase": phase, "origin": connection?.origin ?? "", "error": failure,
-         "identityId": connection?.id ?? "", "recoveryFileSaved": recoveryFileSaved,
+         "identityId": connection?.namespace ?? connection?.id ?? "", "googleEmail": connection?.email ?? "", "googlePending": FileManager.default.fileExists(atPath: directory.appendingPathComponent("google-pending.json").path), "recoveryFileSaved": recoveryFileSaved,
          "revision": verified?["revision"] ?? NSNull(), "verifiedAt": verified?["verifiedAt"] ?? NSNull(),
          "applications": verified?["applications"] ?? NSNull()]
     }
@@ -60,13 +60,10 @@ import UniformTypeIdentifiers
         do {
             if connection == nil {
                 guard phase != "error" else { return status() }
-                let created = Connection.create()
-                // Commit the random identity before any network request so a
-                // lost registration response cannot create another identity.
-                try write(JSONEncoder().encode(created), name: "device.json")
-                connection = created; recoveryFileSaved = false
-                let marker = directory.appendingPathComponent("recovery-exported.json")
-                if FileManager.default.fileExists(atPath: marker.path) { try FileManager.default.removeItem(at: marker) }
+                // Fresh installs remain local. Only an explicit Google link or
+                // recovery-file import may establish a backup identity.
+                phase = "local"; failure = ""
+                return status()
             }
             if var saved = connection, saved.registrationPending == true {
                 phase = "connecting"; failure = ""
@@ -95,21 +92,6 @@ import UniformTypeIdentifiers
         guard let response = result as? HTTPURLResponse, bytes.count <= 24_000_000, let object = try JSONSerialization.jsonObject(with: bytes) as? [String: Any] else { throw DesktopError.message("The backup service returned an invalid response.") }
         guard (200..<300).contains(response.statusCode) else { throw DesktopError.message(object["error"] as? String ?? "Cloud backup could not be verified. Your local history is retained.") }
         return (object, response)
-    }
-    func connect(origin: String, password: String) async throws -> [String: Any] {
-        guard !running, Self.validOrigin(origin) != nil, !password.isEmpty, password.count <= 256 else { throw DesktopError.message("Enter your private workspace URL and password.") }
-        let base = origin.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let (_, response) = try await request(origin: base, path: "/api/login", method: "POST", body: ["id": UUID().uuidString, "password": password])
-        let fields = response.allHeaderFields.reduce(into: [String: String]()) { result, item in if let key = item.key as? String { result[key] = String(describing: item.value) } }
-        guard let url = Self.validOrigin(base), let cookie = HTTPCookie.cookies(withResponseHeaderFields: fields, for: url).first(where: { $0.name == "__Host-vigil_session" }) else { throw DesktopError.message("The workspace did not return a valid sign-in.") }
-        let ownerCookie = "__Host-vigil_session=\(cookie.value)"
-        let (paired, _) = try await request(origin: base, path: "/api/backups/devices", method: "POST", body: ["id": UUID().uuidString, "name": "Apply Vigil on Mac"], cookie: ownerCookie)
-        guard let id = paired["id"] as? String, UUID(uuidString: id) != nil, let token = paired["token"] as? String, token.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil else { throw DesktopError.message("The workspace did not return a valid device connection.") }
-        let saved = Connection(id: id, token: token, origin: base, registrationPending: false)
-        try write(JSONEncoder().encode(saved), name: "device.json")
-        connection = saved; verified = nil; phase = "pending"; failure = ""
-        _ = try? await request(origin: base, path: "/api/logout", method: "POST", body: ["id": UUID().uuidString], cookie: ownerCookie)
-        return status()
     }
     func save(json: String, revision: Int, fingerprint: String) async -> [String: Any] {
         guard connection != nil else { return status() }
@@ -202,6 +184,43 @@ import UniformTypeIdentifiers
         try write(Data("{\"saved\":true}".utf8), name: "recovery-exported.json")
         let paused = directory.appendingPathComponent("backup-paused.json")
         if FileManager.default.fileExists(atPath: paused.path) { try FileManager.default.removeItem(at: paused) }
+        return status()
+    }
+    func googleStart() async throws -> [String: Any] {
+        guard connection == nil || connection?.origin == Connection.publicOrigin else { throw DesktopError.message("This backup belongs to a different service. Keep its recovery file; Google linking is available for the public Apply Vigil service.") }
+        let secret = Connection.create().token
+        let (result, _) = try await request(origin: Connection.publicOrigin, path: "/api/google/start", method: "POST", body: ["pollSecret": secret], token: connection?.token)
+        guard let text = result["authorizationURL"] as? String, let url = URL(string: text), url.scheme == "https", url.host == "accounts.google.com", url.path == "/o/oauth2/v2/auth" else { throw DesktopError.message("Google returned an invalid sign-in address.") }
+        try write(JSONSerialization.data(withJSONObject: ["pollSecret": secret]), name: "google-pending.json")
+        guard NSWorkspace.shared.open(url) else { throw DesktopError.message("Open your browser to continue Google sign-in.") }
+        return status()
+    }
+    private func googleSecret() throws -> String {
+        let bytes = try Data(contentsOf: directory.appendingPathComponent("google-pending.json"))
+        guard let object = try JSONSerialization.jsonObject(with: bytes) as? [String: String], let secret = object["pollSecret"], secret.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil else { throw DesktopError.message("Start Google sign-in again.") }
+        return secret
+    }
+    func googlePoll() async throws -> [String: Any] {
+        try await request(origin: Connection.publicOrigin, path: "/api/google/status", method: "POST", body: ["pollSecret": googleSecret()]).0
+    }
+    func googleCancel() throws -> [String: Any] {
+        let file = directory.appendingPathComponent("google-pending.json")
+        if FileManager.default.fileExists(atPath: file.path) { try FileManager.default.removeItem(at: file) }
+        return status()
+    }
+    func googleFinish(choice: String) async throws -> [String: Any] {
+        guard !running, !setupRunning, ["link", "restore"].contains(choice) else { throw DesktopError.message("Wait for the current backup to finish.") }
+        let (result, _) = try await request(origin: Connection.publicOrigin, path: "/api/google/finish", method: "POST", body: ["pollSecret": googleSecret(), "choice": choice])
+        guard let id = result["id"] as? String, let token = result["token"] as? String, let namespace = result["namespace"] as? String, UUID(uuidString: namespace) != nil, let email = result["email"] as? String else { throw DesktopError.message("Google backup setup returned an invalid connection.") }
+        let candidate = Connection(id: id, token: token, origin: Connection.publicOrigin, registrationPending: false, namespace: namespace, email: email)
+        guard candidate.valid else { throw DesktopError.message("Invalid Google backup credential.") }
+        if let old = connection { try write(JSONEncoder().encode(old), name: "previous-device.json") }
+        try write(JSONEncoder().encode(candidate), name: "device.json")
+        connection = candidate; verified = nil; pending = nil; failure = ""; phase = "pending"; recoveryFileSaved = false
+        for name in ["verified.json", "backup-paused.json", "recovery-exported.json", "google-pending.json"] {
+            let file = directory.appendingPathComponent(name)
+            if FileManager.default.fileExists(atPath: file.path) { try? FileManager.default.removeItem(at: file) }
+        }
         return status()
     }
     nonisolated func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }

@@ -91,3 +91,23 @@ describe('automatic cloud backup startup and recovery',()=>{
     expect(mocks.recover).not.toHaveBeenCalled()
   })
 })
+
+describe('Google completion preserves local history',()=>{
+  it('refuses an unrelated cloud history before changing the saved connection',async()=>{
+    mocks.state!.snapshot=snapshot(486)
+    const {cloudBackup}=await import('../src/desktop/cloud-backup')
+    await expect(cloudBackup.googleFinish('restore',{backupJSON:JSON.stringify(makeBackup(source)),revision:200},false)).rejects.toThrow('different history')
+    expect(mocks.bridge.mock.calls.some(call=>call[0]==='googleFinish')).toBe(false)
+  })
+  it('stops recovery if a new unrelated local entry arrives during sign-in',async()=>{
+    const original=mocks.bridge.getMockImplementation()!
+    mocks.bridge.mockImplementation(async(command,...args)=>{
+      if(command==='googleFinish'){mocks.state!.snapshot=snapshot(1);return {...connected,googleEmail:'person@example.test'}}
+      return original(command,...args)
+    })
+    const {cloudBackup}=await import('../src/desktop/cloud-backup')
+    await expect(cloudBackup.googleFinish('restore',{backupJSON:JSON.stringify(makeBackup(source)),revision:200},false)).rejects.toThrow('Local history changed')
+    expect(mocks.recover).not.toHaveBeenCalled()
+    expect(mocks.state!.snapshot!.entries[0].easy).toBe(1)
+  })
+})

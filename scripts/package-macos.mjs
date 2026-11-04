@@ -45,7 +45,7 @@ for(const architecture of architectures){
   await rm(unpacked,{recursive:true,force:true})
   for(const file of [dmg,zip])assets.push({architecture:arch,file:path.basename(file),bytes:(await stat(file)).size,sha512:createHash('sha512').update(await readFile(file)).digest('hex'),url:`${base}/${path.basename(file)}`})
 }
-const manifest={version:release.version,tag,minimumMacOS:release.minimumMacOS,localOnly:true,storage:'local-first',cloudBackup:'automatic-private-identity',requiresAccount:false,recoveryFileSupported:true,signing:'ad-hoc',notarized:false,assets}
+const manifest={version:release.version,tag,minimumMacOS:release.minimumMacOS,localOnly:true,storage:'local-first',cloudBackup:'optional-google',googleBackup:true,requiresAccount:false,recoveryFileSupported:true,signing:'ad-hoc',notarized:false,assets}
 await writeFile(path.join(output,'release.json'),JSON.stringify(manifest,null,2)+'\n')
 await writeFile(path.join(output,'SHA512SUMS.txt'),assets.map(asset=>`${asset.sha512}  ${asset.file}`).join('\n')+'\n')
 // Build output stays separate from published metadata. After publication, copy

@@ -107,3 +107,19 @@ and is labeled legacy. A recovery file containing the private identity/secret
 allows recovery after all app data is erased. Its possession is the recovery
 proof; a public hardware ID cannot safely substitute for it. No Apple sign-in,
 Keychain dependency, account form, or third-party paid service is introduced.
+
+## Google backup — beta 6
+
+Migration 0006 adds Google backup accounts, scoped access keys and expiring
+sign-in requests. It was applied additively through D1 Studio, including both
+indexes and its migration receipt. GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
+are Worker secrets. Never bundle the client secret or local backup credentials.
+The Google OAuth web client uses the callback
+https://vigil.dumpydon.workers.dev/api/google/callback with openid/email only.
+Google audience publishing is a separate final release check.
+
+Workers supports manual/follow redirect modes; Google exchanges use manual and
+reject non-success responses. A signed-token callback test covers the complete
+exchange. Google readiness is only approval of the identity; the app separately
+confirms linking/restoring. Public download metadata stays on the previous
+verified release until the new binaries and Google flow are verified.
