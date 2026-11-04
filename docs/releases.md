@@ -1,11 +1,19 @@
 # Apply Vigil public Mac releases
 
-The current public beta is `1.0.0-beta.6` (tag `macos-v1.0.0-beta.6`, bundle version
-7), local-first with optional Google cloud backup, ad-hoc signed, and requires macOS 13+. Releases are public at
+The current public beta is `1.0.0-beta.7` (tag `macos-v1.0.0-beta.7`, bundle version
+8), local-first with optional Google cloud backup, ad-hoc signed, and requires macOS 13+. Releases are public at
 <https://github.com/dumpydon/vigil/releases>. Public installers must use the
 `.Local` bundle identity and must never contain credentials or personal records.
 
-## Published beta 6
+## Published beta 7
+
+Uses the exact user-approved imagegen gear in the sidebar, General tab, and
+Settings heading. Its source PNG is documented in [the asset note](design/settings-gear.md).
+Native and web builds include the asset for offline use. Fresh-install checks
+confirm Asia/Kolkata, 12-hour time, and Soft chime; stored user choices are kept.
+Both public installer architectures pass structural and signature checks.
+
+## Earlier beta 6
 
 Google sign-in is optional; fresh installs make no cloud registration request.
 Milestone prompts and Settings connect Google backup. The live browser callback,
@@ -62,8 +70,8 @@ permission-preserving ZIPs, and verifies disk-image checksums.
 
 Output under `output/releases/`:
 
-- `ApplyVigil-1.0.0-beta.6-arm64.dmg` and `.zip`
-- `ApplyVigil-1.0.0-beta.6-x64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.7-arm64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.7-x64.dmg` and `.zip`
 - `SHA512SUMS.txt` and `release.json`
 
 Local builds write metadata only under `output/releases/`. They never overwrite

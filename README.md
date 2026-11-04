@@ -10,7 +10,7 @@
   <a href="https://vigil.dumpydon.workers.dev/install/">Install guide</a> &nbsp;·&nbsp;
   <a href="https://github.com/dumpydon/vigil/releases">Releases &amp; checksums</a>
 </p>
-<p align="center"><sub>Beta 6 · macOS 13+ · Apple Silicon &amp; Intel · Local use without an account · No Keychain access</sub></p>
+<p align="center"><sub>Beta 7 · macOS 13+ · Apple Silicon &amp; Intel · Local use without an account · No Keychain access</sub></p>
 
 <a href="https://vigil.dumpydon.workers.dev/">
   <img src="docs/images/apply-vigil-demo.gif" alt="Apply Vigil in action: menu bar, floating window, application counts, and progress alerts" width="1280">
@@ -24,7 +24,7 @@
 | Experience | Menu bar + floating window; no Dock icon | Browser dashboard + compact view |
 | Data & access | Local saving + automatic safety copies; optional Google cloud backup | Private owner workspace; sign-in, cloud sync & offline cache |
 
-ZIP downloads: [Apple Silicon](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.6/ApplyVigil-1.0.0-beta.6-arm64.zip) · [Intel](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.6/ApplyVigil-1.0.0-beta.6-x64.zip)
+ZIP downloads: [Apple Silicon](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.7/ApplyVigil-1.0.0-beta.7-arm64.zip) · [Intel](https://github.com/dumpydon/vigil/releases/download/macos-v1.0.0-beta.7/ApplyVigil-1.0.0-beta.7-x64.zip)
 
 ## What it does
 
@@ -32,7 +32,7 @@ ZIP downloads: [Apple Silicon](https://github.com/dumpydon/vigil/releases/downlo
 - **Clear progress:** daily goals, a green Rhythm heat map, rolling averages, and 20-Easy-Apply streaks.
 - **Easy corrections:** edit past counts, undo entries, and restore local or verified cloud backups.
 - **Quiet updates:** progress alerts, optional sounds, and JSON/CSV exports.
-- **Your clock:** India time by default, configurable time zone, and AM/PM or 24-hour display.
+- **Your clock:** Asia/Kolkata and 12-hour AM/PM by default, with configurable time zone and clock.
 
 Log LinkedIn Easy Apply and external/form applications separately. Counts are entered manually; Vigil does not apply for you or access your LinkedIn account.
 
