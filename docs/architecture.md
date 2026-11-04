@@ -69,7 +69,7 @@ Read and unread alerts, and their receipts, expire after 15 days. The inbox prun
 
 ## Privacy and backups
 
-The legacy web tracker has one owner login. Public Mac backups use automatically registered private identities, without an account form. Passwords are hashed server-side. Production uses secure HttpOnly session cookies lasting up to 90 days. Private API responses are not cached by the service worker. Cached records can remain on the trusted device after sign-out.
+The legacy web tracker has one owner login. Public Mac backups start after optional Google linking; existing private backup connections remain supported. Passwords are hashed server-side. Production uses secure HttpOnly session cookies lasting up to 90 days. Private API responses are not cached by the service worker. Cached records can remain on the trusted device after sign-out.
 
 Settings provides CSV export and versioned JSON backup/restore. JSON preserves entries, deletion history, goals, and tracking start. Imports retain IDs, add missing records, skip identical records, and preserve current values on conflicts. The whole import is retained locally before chunked syncing begins.
 

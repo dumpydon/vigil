@@ -1,9 +1,17 @@
 # Apply Vigil public Mac releases
 
-The current public beta is `1.0.0-beta.5` (tag `macos-v1.0.0-beta.5`, bundle version
-6), local-first with automatic private cloud backup, ad-hoc signed, and requires macOS 13+. Releases are public at
+The current public beta is `1.0.0-beta.6` (tag `macos-v1.0.0-beta.6`, bundle version
+7), local-first with optional Google cloud backup, ad-hoc signed, and requires macOS 13+. Releases are public at
 <https://github.com/dumpydon/vigil/releases>. Public installers must use the
 `.Local` bundle identity and must never contain credentials or personal records.
+
+## Published beta 6
+
+Google sign-in is optional; fresh installs make no cloud registration request.
+Milestone prompts and Settings connect Google backup. The live browser callback,
+existing-history link, app restart and recovery into an isolated empty workspace
+were verified. Google publishing status is In production. Migration 0006 and
+Worker secrets are configured in the existing Cloudflare service.
 
 ## Earlier beta 4
 
@@ -54,8 +62,8 @@ permission-preserving ZIPs, and verifies disk-image checksums.
 
 Output under `output/releases/`:
 
-- `ApplyVigil-1.0.0-beta.5-arm64.dmg` and `.zip`
-- `ApplyVigil-1.0.0-beta.5-x64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.6-arm64.dmg` and `.zip`
+- `ApplyVigil-1.0.0-beta.6-x64.dmg` and `.zip`
 - `SHA512SUMS.txt` and `release.json`
 
 Local builds write metadata only under `output/releases/`. They never overwrite

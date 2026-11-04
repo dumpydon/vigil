@@ -1,6 +1,6 @@
 # Optional Google backup
 
-Status: implementation in progress; not released.
+Status: implementation, live account/recovery verification and beta 6 artifact publication complete.
 
 ## User flow
 
@@ -88,3 +88,13 @@ verified full history with all retained records. User approval is pending for th
 final account link and public Google publishing. Remaining: finish that link,
 verify cloud/local equality and restart, exercise recovery and offline edits,
 finish public documentation/assets and publish the tested release.
+
+## Live verification complete
+
+The user approved the final account link and public Google sign-in. The existing
+backup namespace was linked in place and verified against local history. A
+restart retained the same connection without another sign-in. An isolated empty
+workspace with no prior device key completed real Google sign-in, retrieved the
+existing history, survived restart and revoked only its temporary test key.
+Google publishing status is In production. All four public release assets were downloaded and verified against their
+manifest; website metadata now references those published artifacts.

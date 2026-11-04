@@ -195,7 +195,7 @@ npm run build
 - Preferences and delivered-alert receipts: this app's UserDefaults domain.
 
 The connected build uses the Cloudflare service for live tracker records.
-The public build automatically uploads full-history versions under a private
+After Google linking, the public build uploads full-history versions under a private
 identity through the separate, device-scoped backup API, unless turned off.
 The public build uses `apply-vigil-device-records-v1` and
 `apply-vigil-local-cache-v1` IndexedDB databases in its separate WebKit store,
